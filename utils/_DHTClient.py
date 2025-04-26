@@ -1,9 +1,15 @@
 import asyncio
 import datetime
+import os
+import pickle
 import random
 import socket
 import struct
 from collections import defaultdict
+
+from utils.Bencode import Encoder, Decoder
+from utils._RoutingTable import RoutingTable
+from utils._Node import Node
 
 
 class _DHTClient:
@@ -13,13 +19,34 @@ class _DHTClient:
         ("82.221.103.244", 6881),  # router.utorrent.com
     ]
 
-    def __init__(self, info_hash, node_id=None):
+    def __init__(self, info_hash, node_id=None, pickle_file='routing_table.pkl'):
         self.info_hash = info_hash
         self.node_id = node_id or self._generate_node_id()
         self.found_peers = set()
-        self.routing_table = RoutingTable(int.from_bytes(self.node_id, byteorder='big'))
+        self.pickle_file = pickle_file
+        self.routing_table = self.load_routing_table(self.pickle_file)
         self.node_timeouts = defaultdict(lambda: 1)
         self._initialize_bootstrap_nodes()
+
+    def load_routing_table(self, filename):
+        """Load routing table from a pickle file, or create a new one if not found."""
+        if os.path.exists(filename):
+            with open(filename, 'rb') as f:
+                return pickle.load(f)
+        else:
+            # Create a new routing table if no pickle file exists
+            print("No saved routing table found, creating a new one.")
+            return RoutingTable(int.from_bytes(self.node_id, byteorder='big'))
+
+    def save_routing_table(self):
+        """Save routing table to a pickle file."""
+        with open(self.pickle_file, 'wb') as f:
+            pickle.dump(self.routing_table, f)
+        print(f"Routing table saved to {self.pickle_file}")
+
+    def __del__(self):
+        """Save routing table automatically when the object is deleted."""
+        self.save_routing_table()
 
     def _initialize_bootstrap_nodes(self):
         for ip, port in self.BOOTSTRAP_NODES:

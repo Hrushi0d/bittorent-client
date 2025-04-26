@@ -264,29 +264,37 @@ class PeerGetter:
 
 
 if __name__ == '__main__':
-    # Start the timer to measure time taken for peer discovery
-    start_time = time.time()
+    try:
+        # Start the timer
+        start_time = time.time()
 
-    with open('../The Last of Us - Part I [FitGirl Repack].torrent', 'rb') as f:
-        meta_info = f.read()
-        torrent = Decoder(meta_info).decode()
-        info_dict = torrent[b'info']
-        bencoded_info = Encoder(info_dict).encode()
-        info_hash = hashlib.sha1(bencoded_info).digest()
+        with open('../Devil May Cry 4 - Special Edition [FitGirl Repack].torrent', 'rb') as f:
+            meta_info = f.read()
+            torrent = Decoder(meta_info).decode()
+            info_dict = torrent[b'info']
+            bencoded_info = Encoder(info_dict).encode()
+            info_hash = hashlib.sha1(bencoded_info).digest()
 
-        print_torrent(torrent)
+            print_torrent(torrent)
 
-        peergetter = PeerGetter(torrent=torrent)
+            peergetter = PeerGetter(torrent=torrent)
 
-        # Running the peer discovery asynchronously
-        asyncio.run(peergetter.get())
+            # Run peer discovery asynchronously
+            asyncio.run(peergetter.get())
 
-        # Calculate the elapsed time
-        elapsed_time = time.time() - start_time
+            # Calculate the elapsed time
+            elapsed_time = time.time() - start_time
 
-        # Log the peers and the time taken
-        logging.info("Peers: %s", peergetter.peers)
-        print("Peers: ", peergetter.peers)
-        logging.info(f"Peer discovery took {elapsed_time:.2f} seconds.")
-        print(f"Peer discovery took {elapsed_time:.2f} seconds.")
+            # Log the peers and the time taken
+            logging.info("Peers: %s", peergetter.peers)
+            print("Peers: ", peergetter.peers)
+            logging.info(f"Peer discovery took {elapsed_time:.2f} seconds.")
+            print(f"Peer discovery took {elapsed_time:.2f} seconds.")
+
+    except Exception as e:
+        logging.exception("An error occurred during peer discovery.")
+        print(f"An error occurred: {e}")
+
+    finally:
+        print(f"Logs saved to {log_filename}")
 
