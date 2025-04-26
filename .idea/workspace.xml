@@ -5,11 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d4398857-e4c4-4827-8b17-77328c55dc0f" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/utils/_Node.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/_RedisClient.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/_TrackerCache.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/_DHTClient.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_DHTClient.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/_PeerGetter.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_PeerGetter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/_RoutingTable.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_RoutingTable.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,18 +37,18 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.Peers.executor": "Run",
-    "Python._PeerGetter.executor": "Run",
-    "Python.grapher.executor": "Run",
-    "Python.reader.executor": "Run",
-    "Python.readerv2.executor": "Run",
-    "Python.test.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.Peers.executor&quot;: &quot;Run&quot;,
+    &quot;Python._PeerGetter.executor&quot;: &quot;Run&quot;,
+    &quot;Python.grapher.executor&quot;: &quot;Run&quot;,
+    &quot;Python.reader.executor&quot;: &quot;Run&quot;,
+    &quot;Python.readerv2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\Projects\bittorent\pythonProject1" />

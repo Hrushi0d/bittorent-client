@@ -13,6 +13,7 @@ import urllib3
 
 from utils.Bencode import Decoder, Encoder, print_torrent
 from utils._DHTClient import _DHTClient
+from utils._RedisClient import RedisClient
 
 # Configure logging to write to a file
 os.makedirs('../logs', exist_ok=True)
@@ -24,6 +25,23 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
 )
+
+
+import asyncio
+import hashlib
+import logging
+import random
+import string
+import struct
+import urllib.parse
+
+import aiohttp
+import urllib3
+
+from utils.Bencode import Encoder, Decoder
+from utils._RedisClient import RedisClient
+from utils._TrackerCache import TrackerCache  # Assuming this is where you defined TrackerCache
+
 
 class PeerGetter:
     class UDPTrackerProtocol(asyncio.DatagramProtocol):
@@ -44,18 +62,21 @@ class PeerGetter:
 
     def __init__(self, torrent):
         self.torrent = torrent
+        self.redis_client = RedisClient()
+        self.cache = TrackerCache(self.redis_client)
+
         if b'info' not in torrent:
             raise ValueError("Torrent metadata does not contain 'info' dictionary.")
 
         info_dict = torrent[b'info']
         bencoded_info = Encoder(info_dict).encode()
         self.info_hash = hashlib.sha1(bencoded_info).digest()
-        self.peer_id = f'-PC0001-{{"".join(random.choices(string.ascii_letters + string.digits, k=12))}}'.encode('utf-8')
+        self.peer_id = f'-PC0001-{"".join(random.choices(string.ascii_letters + string.digits, k=12))}'.encode('utf-8')
         self.peers_found = False
         self.peers = []
         self.peer_set = set()
 
-        logging.info("Info hash: %s", self.info_hash)
+        logging.info("Info hash: %s", self.info_hash.hex())
         logging.info("Info hash length: %d", len(self.info_hash))  # Must be 20
 
     def _parse_compact_format(self, peers_data):
@@ -117,7 +138,6 @@ class PeerGetter:
         port = parsed.port or (443 if scheme == 'https' else 80)
         path = parsed.path or '/'
 
-        # Manually build query to avoid double-encoding
         info_hash_q = urllib.parse.quote_from_bytes(self.info_hash)
         peer_id_q = urllib.parse.quote_from_bytes(self.peer_id)
         query = (
@@ -173,21 +193,15 @@ class PeerGetter:
             return []
 
         try:
-            # Connect request
             tid = random.getrandbits(32)
-            conn_req = struct.pack(
-                ">QLL", 0x41727101980, 0, tid
-            )
+            conn_req = struct.pack(">QLL", 0x41727101980, 0, tid)
             proto.transport.sendto(conn_req)
             resp = await asyncio.wait_for(proto.future, timeout=5)
-            action, resp_tid, conn_id = struct.unpack(
-                ">LLQ", resp
-            )
+            action, resp_tid, conn_id = struct.unpack(">LLQ", resp)
             if action != 0 or resp_tid != tid:
                 logging.error("Invalid UDP connect response: %s", resp)
                 return []
 
-            # Announce request
             tid = random.getrandbits(32)
             announce_req = struct.pack(
                 ">QLL20s20sQQQLLLlh",
@@ -200,9 +214,7 @@ class PeerGetter:
             proto.transport.sendto(announce_req)
             resp = await asyncio.wait_for(proto.future, timeout=5)
 
-            action, rtid, interval, leechers, seeders = struct.unpack(
-                ">LLLLL", resp[:20]
-            )
+            action, rtid, interval, leechers, seeders = struct.unpack(">LLLLL", resp[:20])
             if action != 1 or rtid != tid:
                 logging.error("Invalid UDP announce response: %s", resp)
                 return []
@@ -210,9 +222,7 @@ class PeerGetter:
             peers = []
             for i in range(20, len(resp), 6):
                 ip = '.'.join(str(b) for b in resp[i:i+4])
-                port_num = struct.unpack(
-                    ">H", resp[i+4:i+6]
-                )[0]
+                port_num = struct.unpack(">H", resp[i+4:i+6])[0]
                 peers.append((ip, port_num))
                 self.peer_set.add((ip, port_num))
 
@@ -232,9 +242,7 @@ class PeerGetter:
         url = url.decode('utf-8') if isinstance(url, (bytes, bytearray)) else url
         if url.startswith('udp://'):
             return await self._peers_from_udp(url)
-        elif url.startswith('https://'):
-            return await self._peers_from_http(url)
-        elif url.startswith('http://'):
+        elif url.startswith('http://') or url.startswith('https://'):
             return await self._peers_from_http(url)
         else:
             logging.error("Unsupported tracker protocol: %s", url)
@@ -249,16 +257,24 @@ class PeerGetter:
         self.peers = list(self.peer_set)
 
     async def get(self):
+        # Try to get from cache first
+        cached_peers = await self.cache.get_cached_peers(self.info_hash)
+        if cached_peers:
+            self.peers = cached_peers
+            return self.peers
+
+        # No cache, fetch from trackers
         if b'announce-list' in self.torrent:
             await self._peers_from_multiple_urls(self.torrent[b'announce-list'])
         elif b'announce' in self.torrent:
             await self._peers_from_single_url(self.torrent[b'announce'])
         else:
             # Fallback to DHT or other method
-
             dht = _DHTClient(self.info_hash)
             self.peers = await dht.peers_from_DHT()
 
+        # Save fetched peers to cache
+        await self.cache.cache_peers(self.info_hash, self.peers)
         return self.peers
 
 
@@ -268,14 +284,14 @@ if __name__ == '__main__':
         # Start the timer
         start_time = time.time()
 
-        with open('../Devil May Cry 4 - Special Edition [FitGirl Repack].torrent', 'rb') as f:
+        with open('../Factorio [FitGirl Repack].torrent', 'rb') as f:
             meta_info = f.read()
             torrent = Decoder(meta_info).decode()
-            info_dict = torrent[b'info']
-            bencoded_info = Encoder(info_dict).encode()
-            info_hash = hashlib.sha1(bencoded_info).digest()
+            # info_dict = torrent[b'info']
+            # bencoded_info = Encoder(info_dict).encode()
+            # info_hash = hashlib.sha1(bencoded_info).digest()
 
-            print_torrent(torrent)
+            # print_torrent(torrent)
 
             peergetter = PeerGetter(torrent=torrent)
 
@@ -297,4 +313,3 @@ if __name__ == '__main__':
 
     finally:
         print(f"Logs saved to {log_filename}")
-
