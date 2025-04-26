@@ -3,6 +3,7 @@
 
 # Ignore all pickle files
 *.pkl
+*.txt
 
 # Ignore logs
 logs/
