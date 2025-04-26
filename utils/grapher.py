@@ -1,15 +1,14 @@
-import re
 import asyncio
 import logging
-from datetime import timedelta
+import re
 
 import aiohttp
-import pandas as pd
-import networkx as nx
-import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-from random import uniform
+import matplotlib.pyplot as plt
+import networkx as nx
+import pandas as pd
+
 
 # Configure logging
 def configure_logging():
