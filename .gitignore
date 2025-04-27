@@ -16,3 +16,6 @@ __pycache__/
 # Ignore virtual environments
 venv/
 .env/
+
+readerv2.py
+log.txt

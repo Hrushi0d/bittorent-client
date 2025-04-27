@@ -5,8 +5,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d4398857-e4c4-4827-8b17-77328c55dc0f" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/utils/_RedisClient.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/_TrackerCache.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/_PeerGetter.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_PeerGetter.py" afterDir="false" />
     </list>

@@ -26,7 +26,6 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
 )
 
-
 import asyncio
 import hashlib
 import logging
@@ -86,8 +85,8 @@ class PeerGetter:
 
         peers = []
         for i in range(0, len(peers_data), 6):
-            ip = '.'.join(str(b) for b in peers_data[i:i+4])
-            port = int.from_bytes(peers_data[i+4:i+6], 'big')
+            ip = '.'.join(str(b) for b in peers_data[i:i + 4])
+            port = int.from_bytes(peers_data[i + 4:i + 6], 'big')
             peers.append((ip, port))
             self.peer_set.add((ip, port))
 
@@ -221,8 +220,8 @@ class PeerGetter:
 
             peers = []
             for i in range(20, len(resp), 6):
-                ip = '.'.join(str(b) for b in resp[i:i+4])
-                port_num = struct.unpack(">H", resp[i+4:i+6])[0]
+                ip = '.'.join(str(b) for b in resp[i:i + 4])
+                port_num = struct.unpack(">H", resp[i + 4:i + 6])[0]
                 peers.append((ip, port_num))
                 self.peer_set.add((ip, port_num))
 
@@ -276,7 +275,6 @@ class PeerGetter:
         # Save fetched peers to cache
         await self.cache.cache_peers(self.info_hash, self.peers)
         return self.peers
-
 
 
 if __name__ == '__main__':
