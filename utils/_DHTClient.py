@@ -19,11 +19,12 @@ class _DHTClient:
         ("82.221.103.244", 6881),  # router.utorrent.com
     ]
 
-    def __init__(self, info_hash, node_id=None, pickle_file='routing_table.pkl'):
+    def __init__(self, info_hash, logger, node_id=None):
         self.info_hash = info_hash
+        self.logger = logger
         self.node_id = node_id or self._generate_node_id()
         self.found_peers = set()
-        self.pickle_file = pickle_file
+        self.pickle_file = 'routing_table.pkl'
         self.routing_table = self.load_routing_table(self.pickle_file)
         self.node_timeouts = defaultdict(lambda: 1)
         self._initialize_bootstrap_nodes()
@@ -35,14 +36,14 @@ class _DHTClient:
                 return pickle.load(f)
         else:
             # Create a new routing table if no pickle file exists
-            print("No saved routing table found, creating a new one.")
+            self.logger.info("No saved routing table found, creating a new one.")
             return RoutingTable(int.from_bytes(self.node_id, byteorder='big'))
 
     def save_routing_table(self):
         """Save routing table to a pickle file."""
         with open(self.pickle_file, 'wb') as f:
             pickle.dump(self.routing_table, f)
-        print(f"Routing table saved to {self.pickle_file}")
+        self.logger.info(f"Routing table saved to {self.pickle_file}")
 
     def __del__(self):
         """Save routing table automatically when the object is deleted."""
@@ -68,10 +69,10 @@ class _DHTClient:
             data = await asyncio.wait_for(loop.sock_recv(sock, 4096), timeout)
             return Decoder(data).decode()
         except asyncio.TimeoutError:
-            print(f"[ERROR][{datetime.datetime.utcnow()}] Timeout while waiting for response from {addr}")
+            self.logger.error(f"Timeout while waiting for response from {addr}")
             return None
         except Exception as e:
-            print(f"[ERROR][{datetime.datetime.utcnow()}] Failed to get response from {addr}: {e}")
+            self.logger.error(f"Failed to get response from {addr}: {e}")
             return None
         finally:
             sock.close()
@@ -112,8 +113,7 @@ class _DHTClient:
         msg = self._build_get_peers(tid)
 
         try:
-            print(
-                f"[SEND][{datetime.datetime.utcnow()}] Sending get_peers to {node.ip}:{node.port} \t -TIMEOUT- {timeout}s")
+            self.logger.info(f"Sending get_peers to {node.ip}:{node.port} with timeout {timeout}s")
             response = await self._send_message((node.ip, node.port), msg, timeout)
             if not response:
                 self.node_timeouts[(node.ip, node.port)] = min(timeout * 2, 16)
@@ -138,20 +138,20 @@ class _DHTClient:
                     self.routing_table.insert(new_node)
 
         except asyncio.TimeoutError:
-            print(f"[ERROR][{datetime.datetime.utcnow()}] {node.ip}:{node.port} timed out at {timeout}s")
+            self.logger.error(f"{node.ip}:{node.port} timed out at {timeout}s")
             self.node_timeouts[(node.ip, node.port)] = min(timeout * 2, 16)
         except Exception as e:
-            print(f"[ERROR][{datetime.datetime.utcnow()}] Failed to query {node.ip}:{node.port}: {e}")
+            self.logger.error(f"Failed to query {node.ip}:{node.port}: {e}")
             self.node_timeouts[(node.ip, node.port)] = min(timeout * 2, 16)
 
     async def peers_from_DHT(self, max_peers=50):
-        print(f"[START][{datetime.datetime.utcnow()}] Starting DHT peer discovery for info_hash {self.info_hash.hex()}")
+        self.logger.info(f"Starting DHT peer discovery for info_hash {self.info_hash.hex()}")
 
         while len(self.found_peers) < max_peers:
             closest_nodes = self.routing_table.get_closest(int.from_bytes(self.info_hash, byteorder='big'))
 
             if not closest_nodes:
-                print("[WARN] No more nodes to query in routing table")
+                self.logger.warning("No more nodes to query in routing table")
                 break
 
             # Query all closest nodes in parallel
@@ -161,5 +161,5 @@ class _DHTClient:
             # Small delay to prevent flooding
             await asyncio.sleep(0.1)
 
-        print(f"[DONE][{datetime.datetime.utcnow()}] Found {len(self.found_peers)} peers")
+        self.logger.info(f"Found {len(self.found_peers)} peers")
         return list(self.found_peers)
