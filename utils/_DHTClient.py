@@ -29,6 +29,9 @@ class _DHTClient:
         self.node_timeouts = defaultdict(lambda: 1)
         self._initialize_bootstrap_nodes()
 
+    def __repr__(self):
+        return f'DHTClient(node_id={self.node_id})'
+
     def load_routing_table(self, filename):
         """Load routing table from a pickle file, or create a new one if not found."""
         if os.path.exists(filename):

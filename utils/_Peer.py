@@ -13,6 +13,9 @@ class Peer:
         self.writer = None
         self.retry_count = 0
 
+    def __repr__(self):
+        return f'"Peer(ip={self.ip}, port={self.port})'
+
     async def connect(self, timeout=5):
         backoff_sequence = [1, 2, 4, 8, 16]  # Define the backoff sequence
         try:

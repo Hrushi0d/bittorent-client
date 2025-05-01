@@ -11,6 +11,9 @@ class RoutingTable:
         self.k = k
         self.buckets = [deque() for _ in range(160)]  # 160 buckets for each bit
 
+    def __repr__(self):
+        return f'RoutingTable(filename={self.filename}, k={8})'
+
     @staticmethod
     def xor_distance(id1: int, id2: int) -> int:
         return id1 ^ id2

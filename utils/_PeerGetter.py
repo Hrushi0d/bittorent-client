@@ -55,6 +55,9 @@ class PeerGetter:
         self.logger.info("Info hash: %s", self.info_hash.hex())
         self.logger.info("Info hash length: %d", len(self.info_hash))  # Must be 20
 
+    def __repr__(self):
+        return f'PeerGetter(info_hash={self.info_hash})'
+
     def _parse_compact_format(self, peers_data):
         if not isinstance(peers_data, (bytes, bytearray)):
             self.logger.error("Invalid 'peers' data format, expected bytes.")

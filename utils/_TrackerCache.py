@@ -10,6 +10,9 @@ class TrackerCache:
         self.redis_client = redis_client
         self.ttl = ttl  # Time-to-live for cached responses
 
+    def __repr__(self):
+        return 'TrackerCache()'
+
     def generate_cache_key(self, info_hash):
         """ Generate a unique cache key based on the info_hash. """
         return f"tracker_cache:{info_hash.hex()}"

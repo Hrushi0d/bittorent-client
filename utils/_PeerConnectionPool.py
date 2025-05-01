@@ -34,30 +34,45 @@ class PeerConnectionPool:
         self.peers.append(peer)
         self.logger.info("Added peer %s:%d to connection pool.", ip, port)
 
-    async def _handle_peer(self, peer):
+    async def _handle_peer(self, peer, peer_results):
         try:
-            # async with handles both connect() in __aenter__ and disconnect() in __aexit__
+            # Using async with to handle connect() and disconnect() automatically
             async with peer:
-                # placeholder for real messaging logic
-                await asyncio.sleep(0.1)
+                # placeholder for real messaging logic (like requesting piece info)
+                await asyncio.sleep(0.1)  # Simulate async work
+                # Successfully connected and handled, update peer results dictionary
+                peer_results[peer] = True
+                self.logger.info(f"Successfully handled peer {peer.ip}:{peer.port}")
                 return True
         except Exception as e:
-            self.logger.error("Error handling peer %s:%d - %s",
-                              peer.ip, peer.port, e)
+            # Log any exceptions that occur while handling the peer
+            self.logger.error(f"Error handling peer {peer.ip}:{peer.port} - {e}")
+            # Mark the peer as failed in the results dictionary
+            peer_results[peer] = False
             return False
 
     async def run(self):
         self.logger.info("Starting peer connection process.")
         await self._get_peers()
 
-        tasks = [self._handle_peer(peer) for peer in self.peers]
+        # Dictionary to store peer success/failure
+        peer_results = {}
+
+        # Create a list of tasks to handle each peer connection
+        tasks = [self._handle_peer(peer, peer_results) for peer in self.peers]
+
+        # Wait for all peer handling tasks to finish
         results = await asyncio.gather(*tasks)
 
-        # Count the True and False values
-        true_count = results.count(True)
-        false_count = results.count(False)
+        # Filter successful and failed peers
+        successful_peers = [peer for peer, success in peer_results.items() if success]
+        failed_peers = [peer for peer, success in peer_results.items() if not success]
 
-        # Log the connection results
-        self.logger.info("Connection process completed with results: %s", results)
-        self.logger.info("Number of successful connections (True): %d", true_count)
-        self.logger.info("Number of failed connections (False): %d", false_count)
+        # Log the number of successful and failed connections
+        self.logger.info(f"Number of successful connections (True): {len(successful_peers)}")
+        self.logger.info(f"Number of failed connections (False): {len(failed_peers)}")
+
+        # Optionally: log or process the successful and failed peers
+        self.logger.info(f"Successful Peers: {successful_peers}")
+        self.logger.info(f"Failed Peers: {failed_peers}")
+

@@ -15,6 +15,9 @@ class Decoder:
         self._data = data
         self._index = 0
 
+    def __repr__(self):
+        return 'Decoder()'
+
     def _peek(self):
         if self._index >= len(self._data):  # in bounds
             return None
@@ -101,6 +104,9 @@ class Decoder:
 class Encoder:
     def __init__(self, data):
         self._data = data
+
+    def __repr__(self):
+        return 'Encoder()'
 
     def encode(self):
         return self._encode(self._data)
