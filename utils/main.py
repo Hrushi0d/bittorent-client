@@ -4,7 +4,7 @@ import os
 import time
 from datetime import datetime
 
-from utils.Bencode import Decoder
+from utils.Bencode import Decoder, print_torrent
 from utils._PeerConnectionPool import PeerConnectionPool
 
 # Create log directory and timestamped log filename
@@ -29,11 +29,11 @@ try:
     with open('../Factorio [FitGirl Repack].torrent', 'rb') as f:
         meta_info = f.read()
         torrent = Decoder(meta_info).decode()
+        print_torrent(torrent)
 
     # Create and run the PeerConnectionPool instance
     peer_connection_pool = PeerConnectionPool(torrent=torrent, logger=logger)
-    asyncio.run(peer_connection_pool.run())  # Ensure async run of the pool
-
+    piece_dict = asyncio.run(peer_connection_pool.run())
     # End time tracking
     end_time = time.time()
 

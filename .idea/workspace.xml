@@ -6,6 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="d4398857-e4c4-4827-8b17-77328c55dc0f" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_Peer.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Peer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_PeerConnectionPool.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_PeerConnectionPool.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_Peice_Manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Piece_Manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,6 +44,7 @@
     "Python._Peer.executor": "Run",
     "Python._PeerConnectionPool.executor": "Run",
     "Python._PeerGetter.executor": "Run",
+    "Python._Piece_Manager.executor": "Run",
     "Python.grapher.executor": "Run",
     "Python.main.executor": "Run",
     "Python.reader.executor": "Run",
