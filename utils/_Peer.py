@@ -20,22 +20,16 @@ class Peer:
         return f"Peer(ip={self.ip}, port={self.port})"
 
     async def connect(self, timeout=5):
-        backoff_sequence = [1, 2, 4, 8, 16]
         try:
             self.reader, self.writer = await asyncio.wait_for(
                 asyncio.open_connection(self.ip, self.port),
                 timeout=timeout
             )
             self.logger.info(f"Connected to {self.ip}:{self.port}")
-            # Perform handshake immediately after TCP connection
             await self.perform_handshake()
             return True
         except Exception as e:
             self.logger.error(f"Connection to {self.ip}:{self.port} failed: {e}")
-            # Exponential backoff retry
-            backoff = backoff_sequence[self.retry_count] if self.retry_count < len(backoff_sequence) else backoff_sequence[-1]
-            self.retry_count += 1
-            await asyncio.sleep(backoff)
             return False
 
     async def perform_handshake(self):
@@ -70,9 +64,17 @@ class Peer:
             self.logger.info(f"Disconnected from {self.ip}:{self.port}")
 
     async def __aenter__(self):
-        if not await self.connect():
-            raise ConnectionError(f"Failed to connect to {self.ip}:{self.port}")
-        return self
+        max_retries = 5
+        backoff_sequence = [1, 2, 4, 8, 16]
+
+        for attempt in range(max_retries):
+            if await self.connect():
+                return self
+            backoff = backoff_sequence[attempt] if attempt < len(backoff_sequence) else backoff_sequence[-1]
+            self.logger.warning(f"Retrying connection to {self.ip}:{self.port} in {backoff}s (attempt {attempt + 1})")
+            await asyncio.sleep(backoff)
+
+        raise ConnectionError(f"Failed to connect to {self.ip}:{self.port} after {max_retries} attempts")
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.disconnect()

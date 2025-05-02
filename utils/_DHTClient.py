@@ -48,8 +48,10 @@ class _DHTClient:
             pickle.dump(self.routing_table, f)
         self.logger.info(f"Routing table saved to {self.pickle_file}")
 
-    def __del__(self):
-        """Save routing table automatically when the object is deleted."""
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.save_routing_table()
 
     def _initialize_bootstrap_nodes(self):

@@ -9,25 +9,30 @@ from utils._DownloadManager import DownloadManager
 from utils._PeerConnectionPool import PeerConnectionPool
 from utils._Piece_Manager import PieceManager
 
+# Ensure logs directory exists
 os.makedirs('../logs', exist_ok=True)
+
+# Generate timestamped log filename
 timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
 log_filename = f'../logs/downloader_{timestamp}.log'
 
-logger = logging.getLogger('PeerGetterLogger')
-logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler(log_filename)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+# Configure logging
+logging.basicConfig(
+    filename=log_filename,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+)
+
 
 mode = ['rarest-first', 'random-rarest-first', 'sequential']
 selected_mode = mode[0]  # Change index to select other modes
+logger = logging.getLogger(__name__)
 
 try:
     logger.info("Starting PeerGetter BitTorrent client...")
     start_time = time.time()
 
-    with open('../Factorio [FitGirl Repack].torrent', 'rb') as f:
+    with open('../Devil May Cry 4 - Special Edition [FitGirl Repack].torrent', 'rb') as f:
         meta_info = f.read()
         torrent = Decoder(meta_info).decode()
         logger.info("Successfully decoded .torrent file.")
@@ -40,10 +45,10 @@ try:
     pieces = piece_manager.run()
     logger.info(f"{len(pieces)} pieces loaded using strategy: {selected_mode}")
 
-    download_manager = DownloadManager(pieces)
+    download_manager = DownloadManager(pieces=pieces, piece_dict=piece_dict)
     logger.info("DownloadManager initialized.")
 
-    # Optionally start downloading here
+    # add downloading here
     # asyncio.run(download_manager.start())
 
     end_time = time.time()

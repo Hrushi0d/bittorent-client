@@ -5,11 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d4398857-e4c4-4827-8b17-77328c55dc0f" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/utils/_DownloadManager.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/_Piece.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/_PeerConnectionPool.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_PeerConnectionPool.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/_Piece_Manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Piece_Manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_DownloadManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_DownloadManager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_Piece.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Piece.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -39,22 +37,24 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python.Peers.executor&quot;: &quot;Run&quot;,
-    &quot;Python._Peer.executor&quot;: &quot;Run&quot;,
-    &quot;Python._PeerConnectionPool.executor&quot;: &quot;Run&quot;,
-    &quot;Python._PeerGetter.executor&quot;: &quot;Run&quot;,
-    &quot;Python._Piece_Manager.executor&quot;: &quot;Run&quot;,
-    &quot;Python.grapher.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;Python.reader.executor&quot;: &quot;Run&quot;,
-    &quot;Python.readerv2.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.Peers.executor": "Run",
+    "Python._DownloadManager.executor": "Run",
+    "Python._Peer.executor": "Run",
+    "Python._PeerConnectionPool.executor": "Run",
+    "Python._PeerGetter.executor": "Run",
+    "Python._Piece.executor": "Run",
+    "Python._Piece_Manager.executor": "Run",
+    "Python.grapher.executor": "Run",
+    "Python.main.executor": "Run",
+    "Python.reader.executor": "Run",
+    "Python.readerv2.executor": "Run",
+    "Python.test.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\Projects\bittorent\pythonProject1" />
@@ -62,6 +62,28 @@
     </key>
   </component>
   <component name="RunManager">
+    <configuration name="_DownloadManager" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="pythonProject1" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/utils" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/utils/_DownloadManager.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="_PeerGetter" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="pythonProject1" />
       <option name="ENV_FILES" value="" />
@@ -84,8 +106,32 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="_Piece" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="pythonProject1" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/utils" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/utils/_Piece.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python._DownloadManager" />
+        <item itemvalue="Python._Piece" />
         <item itemvalue="Python._PeerGetter" />
       </list>
     </recent_temporary>

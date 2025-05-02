@@ -249,8 +249,8 @@ class PeerGetter:
             await self._peers_from_single_url(self.torrent[b'announce'])
         else:
             # Fallback to DHT or other method
-            dht = _DHTClient(self.info_hash)
-            self.peers = await dht.peers_from_DHT()
+            async with _DHTClient(self.info_hash, self.logger) as dht:
+                self.peers = await dht.peers_from_DHT()
 
         # Save fetched peers to cache
         await self.cache.cache_peers(self.info_hash, self.peers)
