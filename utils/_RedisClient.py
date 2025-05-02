@@ -1,6 +1,7 @@
 import redis.asyncio as aioredis
 import logging
 
+
 class RedisClient:
     def __init__(self, host='localhost', port=6379, db=0, ttl=3600):
         """ Initialize Async Redis Client """

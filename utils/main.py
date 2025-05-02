@@ -4,45 +4,53 @@ import os
 import time
 from datetime import datetime
 
-from utils.Bencode import Decoder, print_torrent
+from utils.Bencode import Decoder
+from utils._DownloadManager import DownloadManager
 from utils._PeerConnectionPool import PeerConnectionPool
+from utils._Piece_Manager import PieceManager
 
-# Create log directory and timestamped log filename
 os.makedirs('../logs', exist_ok=True)
 timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-log_filename = f'../logs/peergetter_{timestamp}.log'
+log_filename = f'../logs/downloader_{timestamp}.log'
 
-# Configure logging
 logger = logging.getLogger('PeerGetterLogger')
-logging.basicConfig(
-    filename=log_filename,
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-)
+logger.setLevel(logging.INFO)
+file_handler = logging.FileHandler(log_filename)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
+mode = ['rarest-first', 'random-rarest-first', 'sequential']
+selected_mode = mode[0]  # Change index to select other modes
 
 try:
-    # Start time tracking
+    logger.info("Starting PeerGetter BitTorrent client...")
     start_time = time.time()
 
-    # Read and decode the torrent file
     with open('../Factorio [FitGirl Repack].torrent', 'rb') as f:
         meta_info = f.read()
         torrent = Decoder(meta_info).decode()
-        print_torrent(torrent)
+        logger.info("Successfully decoded .torrent file.")
 
-    # Create and run the PeerConnectionPool instance
     peer_connection_pool = PeerConnectionPool(torrent=torrent, logger=logger)
     piece_dict = asyncio.run(peer_connection_pool.run())
-    # End time tracking
-    end_time = time.time()
+    logger.info("Peer discovery completed.")
 
-    # Calculate and log execution time
-    execution_time = end_time - start_time
-    logger.info(f"Execution time: {execution_time:.2f} seconds")
+    piece_manager = PieceManager(piece_dict, torrent=torrent, mode=selected_mode, logger=logger)
+    pieces = piece_manager.run()
+    logger.info(f"{len(pieces)} pieces loaded using strategy: {selected_mode}")
+
+    download_manager = DownloadManager(pieces)
+    logger.info("DownloadManager initialized.")
+
+    # Optionally start downloading here
+    # asyncio.run(download_manager.start())
+
+    end_time = time.time()
+    logger.info(f"Execution completed in {end_time - start_time:.2f} seconds")
 
 except Exception as e:
-    logging.exception("An error occurred during peer connection.")
+    logger.exception("An error occurred during execution.")
     print(f"An error occurred: {e}")
 
 finally:

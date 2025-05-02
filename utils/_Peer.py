@@ -8,7 +8,7 @@ class Peer:
     def __init__(self, ip, port, info_hash, peer_id=None, logger=None):
         self.ip = ip
         self.port = port
-        self.logger = logger or logging.getLogger()
+        self.logger = logger
         self.info_hash = info_hash
         # Generate or use provided peer_id (20 bytes)
         self.peer_id = peer_id or b'-PC0001-' + os.urandom(12)

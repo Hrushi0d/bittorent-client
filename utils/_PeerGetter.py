@@ -39,7 +39,7 @@ class PeerGetter:
         self.torrent = torrent
         self.redis_client = RedisClient()
         self.cache = TrackerCache(self.redis_client)
-        self.logger = logger or logging.getLogger()
+        self.logger = logger
 
         if b'info' not in torrent:
             raise ValueError("Torrent metadata does not contain 'info' dictionary.")

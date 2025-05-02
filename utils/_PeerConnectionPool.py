@@ -145,4 +145,3 @@ class PeerConnectionPool:
             self.logger.info(f"Piece {piece} available from {len(peers)} peers: {peers}")
 
         return piece_dict
-
