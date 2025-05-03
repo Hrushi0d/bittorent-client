@@ -15,9 +15,15 @@ class Peer:
         self.reader = None
         self.writer = None
         self.retry_count = 0
+        self.connected = False  # Track connection status
+        self.handshaked = False  # Track handshake status
+        self.interested_sent = False
+
 
     def __repr__(self):
-        return f"Peer(ip={self.ip}, port={self.port})"
+        return (f"Peer(ip={self.ip}, port={self.port}, "
+                f"connected={self.connected}, handshaked={self.handshaked}, "
+                f"interested_sent={self.interested_sent})")
 
     async def connect(self, timeout=5):
         try:
@@ -26,10 +32,12 @@ class Peer:
                 timeout=timeout
             )
             self.logger.info(f"Connected to {self.ip}:{self.port}")
+            self.connected = True  # Mark as connected
             await self.perform_handshake()
             return True
         except Exception as e:
             self.logger.error(f"Connection to {self.ip}:{self.port} failed: {e}")
+            self.connected = False  # Mark as failed connection attempt
             return False
 
     async def perform_handshake(self):
@@ -48,6 +56,7 @@ class Peer:
         response = await self.reader.readexactly(68)
         if response[28:48] != self.info_hash:
             raise ConnectionError("Info hash mismatch during handshake")
+        self.handshaked = True  # Mark as handshaked
         self.logger.info(f"Handshake successful with {self.ip}:{self.port}")
 
     async def send_interested(self):
@@ -55,6 +64,7 @@ class Peer:
         msg = (1).to_bytes(4, 'big') + b"\x02"
         self.writer.write(msg)
         await self.writer.drain()
+        self.interested_sent = True  # Mark as 'interested' message sent
         self.logger.info(f"Sent 'interested' to {self.ip}:{self.port}")
 
     async def disconnect(self):

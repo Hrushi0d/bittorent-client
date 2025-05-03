@@ -32,7 +32,7 @@ try:
     logger.info("Starting PeerGetter BitTorrent client...")
     start_time = time.time()
 
-    with open('../Devil May Cry 4 - Special Edition [FitGirl Repack].torrent', 'rb') as f:
+    with open('../Factorio [FitGirl Repack].torrent', 'rb') as f:
         meta_info = f.read()
         torrent = Decoder(meta_info).decode()
         logger.info("Successfully decoded .torrent file.")
@@ -44,6 +44,13 @@ try:
     piece_manager = PieceManager(piece_dict, torrent=torrent, mode=selected_mode, logger=logger)
     pieces = piece_manager.run()
     logger.info(f"{len(pieces)} pieces loaded using strategy: {selected_mode}")
+
+    for key, value in piece_dict.items():
+        print(f"Key: {key}, Value type: {value[0]}")
+        break
+    for piece in pieces:
+        print(piece)
+        break
 
     download_manager = DownloadManager(pieces=pieces, piece_dict=piece_dict)
     logger.info("DownloadManager initialized.")

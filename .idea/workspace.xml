@@ -6,8 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="d4398857-e4c4-4827-8b17-77328c55dc0f" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/_DownloadManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_DownloadManager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_Peer.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Peer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_PeerConnectionPool.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_PeerConnectionPool.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/_Piece.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Piece.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_Piece_Manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Piece_Manager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -37,24 +39,24 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.Peers.executor": "Run",
-    "Python._DownloadManager.executor": "Run",
-    "Python._Peer.executor": "Run",
-    "Python._PeerConnectionPool.executor": "Run",
-    "Python._PeerGetter.executor": "Run",
-    "Python._Piece.executor": "Run",
-    "Python._Piece_Manager.executor": "Run",
-    "Python.grapher.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.reader.executor": "Run",
-    "Python.readerv2.executor": "Run",
-    "Python.test.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.Peers.executor&quot;: &quot;Run&quot;,
+    &quot;Python._DownloadManager.executor&quot;: &quot;Run&quot;,
+    &quot;Python._Peer.executor&quot;: &quot;Run&quot;,
+    &quot;Python._PeerConnectionPool.executor&quot;: &quot;Run&quot;,
+    &quot;Python._PeerGetter.executor&quot;: &quot;Run&quot;,
+    &quot;Python._Piece.executor&quot;: &quot;Run&quot;,
+    &quot;Python._Piece_Manager.executor&quot;: &quot;Run&quot;,
+    &quot;Python.grapher.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.reader.executor&quot;: &quot;Run&quot;,
+    &quot;Python.readerv2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\Projects\bittorent\pythonProject1" />

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import pickle
 import random
 from collections import defaultdict
@@ -96,7 +97,7 @@ class PieceManager:
 
     def run(self):
         self.logger.info(f"Running PieceManager with mode: {self.mode}")
-        pieces = None
+        # pieces = None
         if self.mode == 'rarest-first':
             pieces = self._rarest_first()
         elif self.mode == 'random-rarest-first':
@@ -118,7 +119,10 @@ async def main():
         meta_info = f.read()
         torrent = Decoder(meta_info).decode()
         piece_dict = load_piece_dict()
-        manager = PieceManager(piece_dict, torrent, 'random-rarest-first')
+        for key, value in piece_dict.items():
+            print(f"Key type: {type(key)}, Value type: {type(value[0])},{value[0]}")
+            break  # Remove this if you want to inspect all entries
+        manager = PieceManager(piece_dict, torrent, 'random-rarest-first', logger=logging.getLogger())
     # results = await manager.run()
 
     # total_pieces = len(piece_dict)

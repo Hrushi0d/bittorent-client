@@ -8,11 +8,12 @@ class Piece:
         IN_PROGRESS = auto()
         COMPLETED = auto()
         FAILED = auto()
+
     def __init__(self, index: int, hash_value: bytes, length: int):
         self.index = index
         self.hash_value = hash_value
         self.length = length
-        self._status = Piece.Status.NOT_STARTED
+        self._status = Piece.Status.NOT_STARTED  # Correctly use Piece.Status
         self._status_history = [(self._status, time.time())]
 
     def update_status(self, new_status: Status):
@@ -31,7 +32,7 @@ class Piece:
         return self._status == Piece.Status.COMPLETED
 
     def __repr__(self):
-        return f'Piece(index={self.index}, length={self.length})'
+        return f'Piece(index={self.index}, length={self.length}, status={self._status.value})'
 
 
 # import asyncio

@@ -21,8 +21,6 @@ class PeerConnectionPool:
         self.logger.info("PeerConnectionPool initialized with info_hash: %s", self.info_hash.hex())
 
     def _total_pieces(self):
-        # Print the torrent structure for debugging
-        print(self.torrent)
 
         if b'info' not in self.torrent:
             self.logger.error("The 'info' key is missing from the torrent data.")
@@ -106,7 +104,7 @@ class PeerConnectionPool:
                     if payload_len:
                         await reader.readexactly(payload_len)
         except Exception as e:
-            self.logger.error(f"Error reading bitfield from {peer.ip}:{peer.port}: {e}")
+            self.logger.error(f"Error getting piece info from {peer.ip}:{peer.port}: {e}")
 
     async def _handle_peer(self, peer, peer_results, piece_dict):
         try:
