@@ -1,7 +1,7 @@
 import json
 import logging
 
-from utils.Bencode import Encoder, Decoder
+from utils._Bencode import Encoder, Decoder
 from utils._RedisClient import RedisClient
 
 

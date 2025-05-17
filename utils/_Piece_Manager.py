@@ -5,7 +5,7 @@ import random
 from collections import defaultdict
 from tqdm import tqdm
 
-from utils.Bencode import Decoder
+from utils._Bencode import Decoder
 from utils._Piece import Piece
 
 

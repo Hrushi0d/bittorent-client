@@ -12,10 +12,18 @@ from datetime import datetime
 import aiohttp
 import urllib3
 
-from utils.Bencode import Encoder, Decoder
+from utils._Bencode import Encoder, Decoder
 from utils._DHTClient import _DHTClient
 from utils._RedisClient import RedisClient
 from utils._TrackerCache import TrackerCache
+
+
+def load_extra_trackers(file_path="extra_trackers.txt"):
+    try:
+        with open(file_path, "r") as f:
+            return [line.strip() for line in f if line.strip() and not line.startswith("#")]
+    except FileNotFoundError:
+        return []
 
 
 class PeerGetter:
@@ -229,9 +237,17 @@ class PeerGetter:
 
     async def _peers_from_multiple_urls(self, announce_list):
         tasks = []
+
+        # Existing trackers from the .torrent file
         for tier in announce_list:
             for url in tier:
                 tasks.append(self._peers_from_single_url(url))
+
+        # Optional: Add extra trackers from NGOsang's list
+        extra_trackers = load_extra_trackers()
+        for url in extra_trackers:
+            tasks.append(self._peers_from_single_url(url))
+
         await asyncio.gather(*tasks)
         self.peers = list(self.peer_set)
 
@@ -257,34 +273,34 @@ class PeerGetter:
         return self.peers
 
 
-# if __name__ == '__main__':
-#     try:
-#         # Start the timer
-#         start_time = time.time()
-#
-#         with open('../Devil May Cry 4 - Special Edition [FitGirl Repack].torrent', 'rb') as f:
-#             meta_info = f.read()
-#             torrent = Decoder(meta_info).decode()
-#             # info_dict = torrent[b'info']
-#             # bencoded_info = Encoder(info_dict).encode()
-#             # info_hash = hashlib.sha1(bencoded_info).digest()
-#
-#             # print_torrent(torrent)
-#
-#             peergetter = PeerGetter(torrent=, logger=logger)
-#
-#             # Run peer discovery asynchronously
-#             asyncio.run(peergetter.get())
-#
-#             # Calculate the elapsed time
-#             elapsed_time = time.time() - start_time
-#
-#             # Log the peers and the time taken
-#             logging.info("Peers: %s", peergetter.peers)
-#             print("Peers: ", peergetter.peers)
-#             logging.info(f"Peer discovery took {elapsed_time:.2f} seconds.")
-#             print(f"Peer discovery took {elapsed_time:.2f} seconds.")
-#
-#     except Exception as e:
-#         logging.exception("An error occurred during peer discovery.")
-#         print(f"An error occurred: {e}")
+if __name__ == '__main__':
+    try:
+        # Start the timer
+        start_time = time.time()
+
+        with open('../Factorio [FitGirl Repack].torrent', 'rb') as f:
+            meta_info = f.read()
+            torrent = Decoder(meta_info).decode()
+            # info_dict = torrent[b'info']
+            # bencoded_info = Encoder(info_dict).encode()
+            # info_hash = hashlib.sha1(bencoded_info).digest()
+
+            # print_torrent(torrent)
+
+            peergetter = PeerGetter(torrent=torrent, logger=logging.getLogger())
+
+            # Run peer discovery asynchronously
+            asyncio.run(peergetter.get())
+
+            # Calculate the elapsed time
+            elapsed_time = time.time() - start_time
+
+            # Log the peers and the time taken
+            logging.info("Peers: %s", peergetter.peers)
+            print("Peers: ", peergetter.peers)
+            logging.info(f"Peer discovery took {elapsed_time:.2f} seconds.")
+            print(f"Peer discovery took {elapsed_time:.2f} seconds.")
+
+    except Exception as e:
+        logging.exception("An error occurred during peer discovery.")
+        print(f"An error occurred: {e}")
