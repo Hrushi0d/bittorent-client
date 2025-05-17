@@ -3,6 +3,7 @@ import hashlib
 import struct
 from collections import defaultdict
 
+from utils._AsyncQueue import AsyncQueue
 from utils._Peer import Peer
 from utils._Piece import Piece
 
@@ -20,13 +21,14 @@ def verify_piece_hash(piece_data, expected_hash):
 
 
 class DownloadManager:
-    def __init__(self, logger, pieces: list[Piece], piece_dict: defaultdict[list[Peer]],
+    def __init__(self, logger, async_queue: AsyncQueue, pieces: list[Piece], piece_dict: defaultdict[list[Peer]],
                  max_concurrent_pieces=5, max_concurrent_blocks=20):
         self.logger = logger
         self.pieces_order = pieces
         self.piece_dict = piece_dict
         self.piece_semaphore = asyncio.Semaphore(max_concurrent_pieces)
         self.block_semaphore = asyncio.Semaphore(max_concurrent_blocks)
+        self.async_queue = async_queue
 
     async def download_from_peer(self, piece, peer):
         async with self.piece_semaphore:
@@ -61,7 +63,7 @@ class DownloadManager:
                             return None
                 if verify_piece_hash(piece_data, hash_value):
                     self.logger.info(f"Successfully downloaded piece {piece_index} from {ip}:{port}")
-                    return piece_data
+                    await self.async_queue.push(piece, piece_data)
                 else:
                     self.logger.warning(f"Piece {piece_index} hash verification failed from {ip}:{port}")
                     return None

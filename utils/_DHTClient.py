@@ -15,7 +15,6 @@ from utils._Node import Node
 
 
 class _DHTClient:
-    # Bootstrap nodes ordered by reliability
     BOOTSTRAP_NODES = [
         ("67.215.246.10", 6881),  # router.bittorrent.com
         ("87.98.162.88", 6881),  # dht.transmissionbt.com

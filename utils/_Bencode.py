@@ -9,6 +9,9 @@ SEPARATOR_TOKEN = b':'
 
 
 class Decoder:
+    """
+    Decoder class that takes in Bencoded data and decodes it.
+    """
     def __init__(self, data):
         if not isinstance(data, bytes):
             raise TypeError('Argument data must be of type bytes, it is of type ' + str(type(data)))
@@ -102,6 +105,9 @@ class Decoder:
 
 
 class Encoder:
+    """
+    Bencoder. takes in int or list or dict and returns Bencoded bytearray
+    """
     def __init__(self, data):
         self._data = data
 
