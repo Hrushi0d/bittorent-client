@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import logging
 import os
 import pickle
 import random
@@ -22,7 +23,7 @@ class _DHTClient:
         ("212.129.33.50", 6881),  # dht.aelitis.com
     ]
 
-    def __init__(self, info_hash, logger, node_id=None, max_nodes_per_request=8, socket_timeout=5):
+    def __init__(self, info_hash, logger: logging.Logger, node_id=None, max_nodes_per_request=8, socket_timeout=5):
         self.info_hash = info_hash
         self.logger = logger
         self.node_id = node_id or self._generate_node_id()
@@ -46,13 +47,13 @@ class _DHTClient:
                 with open(filename, 'rb') as f:
                     routing_table = pickle.load(f)
                     self.logger.info(
-                        f"Loaded routing table with {sum(len(bucket) for bucket in routing_table.buckets)} nodes")
+                        f"DHTClient - Loaded routing table with {sum(len(bucket) for bucket in routing_table.buckets)} nodes")
                     return routing_table
         except (pickle.PickleError, EOFError, AttributeError) as e:
-            self.logger.warning(f"Error loading routing table: {e}. Creating new one.")
+            self.logger.warning(f"DHTClient - Error loading routing table: {e}. Creating new one.")
 
         # Create a new routing table if no pickle file exists or error occurred
-        self.logger.info("Creating a new routing table.")
+        self.logger.info("DHTClient - Creating a new routing table.")
         return RoutingTable(int.from_bytes(self.node_id, byteorder='big'))
 
     def save_routing_table(self):
@@ -61,9 +62,9 @@ class _DHTClient:
             with open(self.pickle_file, 'wb') as f:
                 pickle.dump(self.routing_table, f)
             self.logger.info(
-                f"Routing table with {sum(len(bucket) for bucket in self.routing_table.buckets)} nodes saved to {self.pickle_file}")
+                f"DHTClient - Routing table with {sum(len(bucket) for bucket in self.routing_table.buckets)} nodes saved to {self.pickle_file}")
         except Exception as e:
-            self.logger.error(f"Failed to save routing table: {e}")
+            self.logger.error(f"DHTClient - Failed to save routing table: {e}")
 
     async def __aenter__(self):
         return self
@@ -127,16 +128,16 @@ class _DHTClient:
             try:
                 return Decoder(data).decode()
             except Exception as e:
-                self.logger.error(f"Failed to decode response from {addr}: {e}")
+                self.logger.error(f"DHTClient - Failed to decode response from {addr}: {e}")
                 return None
 
         except asyncio.TimeoutError:
-            self.logger.error(f"{addr[0]}:{addr[1]} timed out at {timeout}s")
+            self.logger.error(f"DHTClient - {addr[0]}:{addr[1]} timed out at {timeout}s")
             # Exponential backoff for timeouts
             self.node_timeouts[addr] = min(timeout * 2, 16)
             return None
         except Exception as e:
-            self.logger.error(f"Failed to query {addr[0]}:{addr[1]}: {e}")
+            self.logger.error(f"DHTClient - Failed to query {addr[0]}:{addr[1]}: {e}")
             self.node_timeouts[addr] = min(timeout * 2, 16)
             return None
 
@@ -192,7 +193,7 @@ class _DHTClient:
         msg = self._build_get_peers(tid)
 
         try:
-            self.logger.info(f"Sending get_peers to {node.ip}:{node.port} with timeout {timeout}s")
+            self.logger.info(f"DHTClient - Sending get_peers to {node.ip}:{node.port} with timeout {timeout}s")
             response = await self._send_message(addr, msg, timeout)
 
             if not response:
@@ -210,7 +211,7 @@ class _DHTClient:
             if b"values" in r:
                 new_peers = self._parse_compact_peers(r[b"values"])
                 self.found_peers.update(new_peers)
-                self.logger.info(f"Found {len(new_peers)} new peers from {node.ip}:{node.port}")
+                self.logger.info(f"DHTClient - Found {len(new_peers)} new peers from {node.ip}:{node.port}")
 
             # Process new nodes to query
             if b"nodes" in r:
@@ -225,7 +226,7 @@ class _DHTClient:
                     self.routing_table.insert(new_node)
 
         except Exception as e:
-            self.logger.error(f"Error in _query_node for {node.ip}:{node.port}: {e}")
+            self.logger.error(f"DHTClient - Error in _query_node for {node.ip}:{node.port}: {e}")
 
     def _get_nodes_to_query(self, max_nodes):
         """Get nodes to query, prioritizing responsive and closest nodes"""
@@ -257,7 +258,7 @@ class _DHTClient:
 
     async def peers_from_DHT(self, max_peers=50, max_queries=100):
         """Find peers using the DHT network"""
-        self.logger.info(f"Starting DHT peer discovery for info_hash {self.info_hash.hex()}")
+        self.logger.info(f"DHTClient - Starting DHT peer discovery for info_hash {self.info_hash.hex()}")
         queries_performed = 0
         start_time = time.time()
 
@@ -266,7 +267,7 @@ class _DHTClient:
             nodes_to_query = self._get_nodes_to_query(self.max_nodes_per_request)
 
             if not nodes_to_query:
-                self.logger.warning("No more nodes to query in routing table")
+                self.logger.warning("DHTClient - No more nodes to query in routing table")
                 break
 
             # Query all selected nodes in parallel
@@ -286,8 +287,8 @@ class _DHTClient:
             elapsed = time.time() - start_time
             if elapsed > 30 and len(self.found_peers) > 0:
                 self.logger.info(
-                    f"DHT search taking too long ({elapsed:.1f}s), returning with {len(self.found_peers)} peers")
+                    f"DHTClient - DHT search taking too long ({elapsed:.1f}s), returning with {len(self.found_peers)} peers")
                 break
 
-        self.logger.info(f"DHT search complete. Found {len(self.found_peers)} peers in {queries_performed} queries")
+        self.logger.info(f"DHTClient - DHT search complete. Found {len(self.found_peers)} peers in {queries_performed} queries")
         return list(self.found_peers)[:max_peers]  # Return only up to max_peers
