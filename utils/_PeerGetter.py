@@ -17,6 +17,37 @@ from utils._DHTClient import _DHTClient
 from utils._RedisClient import RedisClient
 from utils._TrackerCache import TrackerCache
 
+import ipaddress
+
+
+def is_valid_peer(ip, port: int) -> bool:
+    """
+    Returns True if ip is a valid IPv4 or IPv6 address (not multicast, not unspecified, not loopback, not private)
+    and port is in the valid BitTorrent peer port range (1-65535), excluding reserved/blocked ports.
+    """
+    try:
+        ip = ip.decode() if isinstance(ip, bytes) else ip
+        ip_obj = ipaddress.ip_address(ip)
+        if (
+                ip_obj.is_multicast
+                or ip_obj.is_unspecified
+                or ip_obj.is_loopback
+                or ip_obj.is_link_local
+                or ip_obj.is_reserved
+                or ip_obj.is_private
+        ):
+            return False
+    except ValueError:
+        return False
+
+    # Commonly blocked ports (0, 135-139, 445, 1024, >65535)
+    if not (1 <= port <= 65535):
+        return False
+    if port in {135, 136, 137, 138, 139, 445, 0}:
+        return False
+
+    return True
+
 
 def load_extra_trackers(file_path="extra_trackers.txt"):
     try:
@@ -75,8 +106,9 @@ class PeerGetter:
         for i in range(0, len(peers_data), 6):
             ip = '.'.join(str(b) for b in peers_data[i:i + 4])
             port = int.from_bytes(peers_data[i + 4:i + 6], 'big')
-            peers.append((ip, port))
-            self.peer_set.add((ip, port))
+            if is_valid_peer(ip,port):
+                peers.append((ip, port))
+                self.peer_set.add((ip, port))
 
         self.peers_found = True
         self.logger.info("PeerGetter - Successfully parsed %d peers (compact).", len(peers))
@@ -91,7 +123,7 @@ class PeerGetter:
         for peer in peer_list:
             ip = peer.get(b'ip')
             port = peer.get(b'port')
-            if ip and port:
+            if ip and port and is_valid_peer(ip,port):
                 peers.append((ip, port))
                 self.peer_set.add((ip, port))
             else:
@@ -127,16 +159,19 @@ class PeerGetter:
 
         info_hash_q = urllib.parse.quote_from_bytes(self.info_hash)
         peer_id_q = urllib.parse.quote_from_bytes(self.peer_id)
+        # Consider event=started and parameterize left/port if needed
         query = (
             f"info_hash={info_hash_q}&"
-            f"peer_id={peer_id_q}&port=6881&uploaded=0&downloaded=0&left=0&event="
+            f"peer_id={peer_id_q}&port=6881&uploaded=0&downloaded=0&left=0&event=started"
         )
         tracker_url = f"{scheme}://{host}:{port}{path}?{query}"
         self.logger.info("PeerGetter - Requesting tracker HTTP/HTTPS: %s", tracker_url)
 
+        headers = {'User-Agent': 'uTorrent/3.5.5'}
+
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(tracker_url, timeout=5) as resp:
+                async with session.get(tracker_url, timeout=5, headers=headers) as resp:
                     if resp.status != 200:
                         self.logger.error("PeerGetter - Tracker HTTP returned status %d", resp.status)
                         return []

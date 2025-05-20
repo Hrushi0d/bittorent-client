@@ -28,6 +28,7 @@ mode = ['rarest-first', 'random-rarest-first', 'sequential']
 selected_mode = mode[0]  # Change index to select other modes
 logger = logging.getLogger(__name__)
 
+
 async def async_main():
     try:
         logger.info("Main - Starting PeerGetter BitTorrent client...")
@@ -38,7 +39,7 @@ async def async_main():
             torrent, decode_time = None, None
             try:
                 t0 = time.time()
-                with open('../Factorio [FitGirl Repack].torrent', 'rb') as f:
+                with open('../[Kyockcho] [Completed] Maid Education Fallen Aristocrat (English).torrent', 'rb') as f:
                     meta_info = f.read()
                     torrent = Decoder(meta_info).decode()
                 decode_time = time.time() - t0
@@ -84,7 +85,8 @@ async def async_main():
                 elapsed = time.time() - t0
                 spinner.ok("✔")
                 spinner.write(f"✓ Selected {len(pieces)} pieces in {elapsed:.2f} seconds")
-                logger.info(f"Main - Loaded {len(pieces)} pieces in {elapsed:.2f} seconds using {selected_mode} strategy.")
+                logger.info(
+                    f"Main - Loaded {len(pieces)} pieces in {elapsed:.2f} seconds using {selected_mode} strategy.")
             except Exception as e:
                 spinner.fail("💥")
                 spinner.write("✖ Piece selection failed")
@@ -141,6 +143,7 @@ async def async_main():
     except Exception as exp:
         logger.exception("Main - Download failed.")
         raise exp
+
 
 if __name__ == "__main__":
     try:
