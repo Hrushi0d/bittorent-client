@@ -33,10 +33,10 @@ class AsyncQueue:
     async def push(self, piece: Piece, piece_data: bytes):
         piece_info = _PieceInfo(index=piece.index,data=piece_data,hash_value=piece.hash_value)
         if self._closed:
-            self.logger.warning("Attempted to push to a closed queue.")
+            self.logger.warning("AsyncQueue - Attempted to push to a closed queue.")
             return
         if piece_info.index in self._piece_set or piece_info.index in self._processing:
-            self.logger.debug(f"Duplicate piece {piece_info.index} ignored.")
+            self.logger.debug(f"AsyncQueue - Duplicate piece {piece_info.index} ignored.")
             return
 
         await self._queue.put(piece_info)
@@ -54,13 +54,13 @@ class AsyncQueue:
                 try:
                     fut.set_result(piece_info)
                 except Exception as e:
-                    self.logger.error(f"Failed to notify listener: {e}")
+                    self.logger.error(f"AsyncQueue - Failed to notify listener: {e}")
         self._listeners.clear()
-        self.logger.debug(f"Pushed piece {piece_info.index} (size={len(piece_data)} bytes) to queue.")
+        self.logger.debug(f"AsyncQueue - Pushed piece {piece_info.index} (size={len(piece_data)} bytes) to queue.")
 
     async def pop(self) -> _PieceInfo:
         if self._closed and self._queue.empty():
-            raise RuntimeError("Queue is closed and empty")
+            raise RuntimeError("AsyncQueue - Queue is closed and empty")
         piece = await self._queue.get()
         self._piece_set.discard(piece.index)
         self._processing.add(piece.index)

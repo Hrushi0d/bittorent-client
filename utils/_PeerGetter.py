@@ -43,7 +43,7 @@ class PeerGetter:
             if not self.future.done():
                 self.future.set_exception(exc)
 
-    def __init__(self, torrent, logger):
+    def __init__(self, torrent, logger: logging.Logger):
         self.torrent = torrent
         self.redis_client = RedisClient()
         self.cache = TrackerCache(self.redis_client)
@@ -60,15 +60,15 @@ class PeerGetter:
         self.peers = []
         self.peer_set = set()
 
-        self.logger.info("Info hash: %s", self.info_hash.hex())
-        self.logger.info("Info hash length: %d", len(self.info_hash))  # Must be 20
+        self.logger.info("PeerGetter - Info hash: %s", self.info_hash.hex())
+        self.logger.info("PeerGetter - Info hash length: %d", len(self.info_hash))  # Must be 20
 
     def __repr__(self):
         return f'PeerGetter(info_hash={self.info_hash})'
 
     def _parse_compact_format(self, peers_data):
         if not isinstance(peers_data, (bytes, bytearray)):
-            self.logger.error("Invalid 'peers' data format, expected bytes.")
+            self.logger.error("PeerGetter - Invalid 'peers' data format, expected bytes.")
             return []
 
         peers = []
@@ -79,12 +79,12 @@ class PeerGetter:
             self.peer_set.add((ip, port))
 
         self.peers_found = True
-        self.logger.info("Successfully parsed %d peers (compact).", len(peers))
+        self.logger.info("PeerGetter - Successfully parsed %d peers (compact).", len(peers))
         return peers
 
     def _parse_verbose_format(self, peer_list):
         if not isinstance(peer_list, list):
-            self.logger.error("Invalid verbose peer data format.")
+            self.logger.error("PeerGetter - Invalid verbose peer data format.")
             return []
 
         peers = []
@@ -95,16 +95,16 @@ class PeerGetter:
                 peers.append((ip, port))
                 self.peer_set.add((ip, port))
             else:
-                self.logger.error("Invalid peer data entry: %s", peer)
+                self.logger.error("PeerGetter - Invalid peer data entry: %s", peer)
 
         self.peers_found = True
-        self.logger.info("Successfully parsed %d peers (verbose).", len(peers))
+        self.logger.info("PeerGetter - Successfully parsed %d peers (verbose).", len(peers))
         return peers
 
     def _parse_peers(self, tracker_response):
         peers_data = tracker_response.get(b'peers')
         if peers_data is None:
-            self.logger.error("No peers in tracker response: %s", tracker_response)
+            self.logger.error("PeerGetter - No peers in tracker response: %s", tracker_response)
             return []
 
         if isinstance(peers_data, (bytes, bytearray)):
@@ -112,7 +112,7 @@ class PeerGetter:
         elif isinstance(peers_data, list):
             return self._parse_verbose_format(peers_data)
         else:
-            self.logger.error("Unknown peers data type: %s", type(peers_data))
+            self.logger.error("PeerGetter - Unknown peers data type: %s", type(peers_data))
             return []
 
     async def _peers_from_http(self, url):
@@ -132,41 +132,41 @@ class PeerGetter:
             f"peer_id={peer_id_q}&port=6881&uploaded=0&downloaded=0&left=0&event="
         )
         tracker_url = f"{scheme}://{host}:{port}{path}?{query}"
-        self.logger.info("Requesting tracker HTTP/HTTPS: %s", tracker_url)
+        self.logger.info("PeerGetter - Requesting tracker HTTP/HTTPS: %s", tracker_url)
 
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(tracker_url, timeout=5) as resp:
                     if resp.status != 200:
-                        self.logger.error("Tracker HTTP returned status %d", resp.status)
+                        self.logger.error("PeerGetter - Tracker HTTP returned status %d", resp.status)
                         return []
                     body = await resp.read()
                     if not body:
-                        self.logger.error("Empty body from HTTP tracker %s", tracker_url)
+                        self.logger.error("PeerGetter - Empty body from HTTP tracker %s", tracker_url)
                         return []
                     try:
                         data = Decoder(body).decode()
                         return self._parse_peers(data)
                     except Exception as e:
-                        self.logger.error("Failed to decode HTTP tracker response: %s", e)
+                        self.logger.error("PeerGetter - Failed to decode HTTP tracker response: %s", e)
                         return []
         except asyncio.TimeoutError:
-            self.logger.error("Timeout accessing HTTP tracker %s", tracker_url)
+            self.logger.error("PeerGetter - Timeout accessing HTTP tracker %s", tracker_url)
             return []
         except Exception as e:
-            self.logger.error("Error accessing HTTP tracker %s: %s", tracker_url, e)
+            self.logger.error("PeerGetter - Error accessing HTTP tracker %s: %s", tracker_url, e)
             return []
 
     async def _peers_from_udp(self, url):
         if self.peers_found:
             return []
 
-        self.logger.info("Requesting peers from UDP tracker: %s", url)
+        self.logger.info("PeerGetter - Requesting peers from UDP tracker: %s", url)
         parsed = urllib3.util.parse_url(url)
         host = parsed.host
         port = parsed.port
         if not host or not port:
-            self.logger.error("Invalid UDP URL: %s", url)
+            self.logger.error("PeerGetter - Invalid UDP URL: %s", url)
             return []
 
         loop = asyncio.get_running_loop()
@@ -176,7 +176,7 @@ class PeerGetter:
                 remote_addr=(host, port)
             )
         except Exception as e:
-            self.logger.error("Cannot create UDP endpoint for %s: %s", url, e)
+            self.logger.error("PeerGetter - Cannot create UDP endpoint for %s: %s", url, e)
             return []
 
         try:
@@ -186,7 +186,7 @@ class PeerGetter:
             resp = await asyncio.wait_for(proto.future, timeout=5)
             action, resp_tid, conn_id = struct.unpack(">LLQ", resp)
             if action != 0 or resp_tid != tid:
-                self.logger.error("Invalid UDP connect response: %s", resp)
+                self.logger.error("PeerGetter - Invalid UDP connect response: %s", resp)
                 return []
 
             tid = random.getrandbits(32)
@@ -203,7 +203,7 @@ class PeerGetter:
 
             action, rtid, interval, leechers, seeders = struct.unpack(">LLLLL", resp[:20])
             if action != 1 or rtid != tid:
-                self.logger.error("Invalid UDP announce response: %s", resp)
+                self.logger.error("PeerGetter - Invalid UDP announce response: %s", resp)
                 return []
 
             peers = []
@@ -214,13 +214,13 @@ class PeerGetter:
                 self.peer_set.add((ip, port_num))
 
             self.peers_found = True
-            self.logger.info("Found %d peers via UDP tracker %s", len(peers), url)
+            self.logger.info("PeerGetter - Found %d peers via UDP tracker %s", len(peers), url)
             return peers
         except asyncio.TimeoutError:
-            self.logger.error("Timeout in UDP tracker %s", url)
+            self.logger.error("PeerGetter - Timeout in UDP tracker %s", url)
             return []
         except Exception as e:
-            self.logger.error("Error during UDP tracker communication %s: %s", url, e)
+            self.logger.error("PeerGetter - Error during UDP tracker communication %s: %s", url, e)
             return []
         finally:
             transport.close()
@@ -232,7 +232,7 @@ class PeerGetter:
         elif url.startswith('http://') or url.startswith('https://'):
             return await self._peers_from_http(url)
         else:
-            self.logger.error("Unsupported tracker protocol: %s", url)
+            self.logger.error("PeerGetter - Unsupported tracker protocol: %s", url)
             return []
 
     async def _peers_from_multiple_urls(self, announce_list):
@@ -298,7 +298,7 @@ if __name__ == '__main__':
             # Log the peers and the time taken
             logging.info("Peers: %s", peergetter.peers)
             print("Peers: ", peergetter.peers)
-            logging.info(f"Peer discovery took {elapsed_time:.2f} seconds.")
+            logging.info(f"PeerGetter - Peer discovery took {elapsed_time:.2f} seconds.")
             print(f"Peer discovery took {elapsed_time:.2f} seconds.")
 
     except Exception as e:

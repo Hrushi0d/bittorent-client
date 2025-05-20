@@ -1,16 +1,19 @@
 import asyncio
 import hashlib
+import logging
 import random
 import time
+import traceback
 from collections import defaultdict, deque
 
+from utils import _Peer
 from utils._Bencode import Encoder
 from utils._Peer import Peer
 from utils._PeerGetter import PeerGetter
 
 
 class PeerConnectionPool:
-    def __init__(self, torrent, logger):
+    def __init__(self, torrent, logger: logging.Logger):
         self.torrent = torrent
         self.logger = logger
         self.info_dict = torrent[b'info']
@@ -27,7 +30,7 @@ class PeerConnectionPool:
         self.peer_stats = {}  # Track peer statistics for prioritization
         self.failed_peers = []  # Track failed peers for retry
         self.total_pieces = self._calculate_total_pieces()
-        self.logger.info("PeerConnectionPool initialized with info_hash: %s", self.info_hash.hex())
+        self.logger.info("PeerConnectionPool - Initialized with info_hash: %s", self.info_hash.hex())
 
         # Configure connection parameters
         self.connection_timeout = 5  # Timeout in seconds
@@ -45,7 +48,7 @@ class PeerConnectionPool:
     def _calculate_total_pieces(self):
         """Calculate total pieces once during initialization"""
         if b'info' not in self.torrent:
-            self.logger.error("The 'info' key is missing from the torrent data.")
+            self.logger.error("PeerConnectionPool - The 'info' key is missing from the torrent data.")
             return 0
 
         # Calculate the total size of the files (cached calculation)
@@ -58,7 +61,7 @@ class PeerConnectionPool:
             # Single file torrent
             total_size = self.info_dict[b'length']
         else:
-            self.logger.error("Neither 'length' nor 'files' found in the 'info' dictionary.")
+            self.logger.error("PeerConnectionPool - Neither 'length' nor 'files' found in the 'info' dictionary.")
             return 0
 
         # Calculate the total number of pieces based on the total size and piece length
@@ -68,12 +71,12 @@ class PeerConnectionPool:
         num_hashes = len(self.pieces_data) // 20  # Each hash is 20 bytes (SHA1)
         if num_hashes != total_pieces:
             self.logger.warning(
-                f"Number of piece hashes ({num_hashes}) does not match the expected number of pieces ({total_pieces}).")
+                f"PeerConnectionPool - Number of piece hashes ({num_hashes}) does not match the expected number of pieces ({total_pieces}).")
             # Use the hash count as the source of truth if they differ
             total_pieces = num_hashes
 
         self.logger.info(
-            f"Total size: {total_size} bytes, Piece length: {self.piece_length} bytes, Total pieces: {total_pieces}")
+            f"PeerConnectionPool - Total size: {total_size} bytes, Piece length: {self.piece_length} bytes, Total pieces: {total_pieces}")
         return total_pieces
 
     def _add_peer(self, ip, port):
@@ -90,11 +93,10 @@ class PeerConnectionPool:
             'score': 0  # Used for prioritization
         }
 
-    async def _get_peers(self):
+    async def _get_peers(self, max_tracker_retries=3):
         """Retrieve peers from tracker with retry logic"""
-        self.logger.info("Attempting to retrieve peers from tracker.")
+        self.logger.info("PeerConnectionPool - Attempting to retrieve peers from tracker.")
         retry_count = 0
-        max_tracker_retries = 3
 
         while retry_count < max_tracker_retries:
             try:
@@ -104,7 +106,7 @@ class PeerConnectionPool:
                     retry_count += 1
                     wait_time = 2 ** retry_count
                     self.logger.warning(
-                        f"No peers received. Retrying in {wait_time} seconds "
+                        f"PeerConnectionPool - No peers received. Retrying in {wait_time} seconds "
                         f"(attempt {retry_count}/{max_tracker_retries})")
                     await asyncio.sleep(wait_time)
                     continue
@@ -113,20 +115,20 @@ class PeerConnectionPool:
                 for ip, port in peers:
                     self._add_peer(ip, port)
 
-                self.logger.info(f"Successfully retrieved and added {len(peers)} peers.")
+                self.logger.info(f"PeerConnectionPool - Successfully retrieved and added {len(peers)} peers.")
                 return
 
             except Exception as e:
                 retry_count += 1
                 wait_time = 2 ** retry_count
-                self.logger.error(f"Error while retrieving peers: {e}")
+                self.logger.error(f"PeerConnectionPool - Error while retrieving peers: {e}")
 
                 if retry_count < max_tracker_retries:
                     self.logger.info(
-                        f"Retrying tracker in {wait_time} seconds (attempt {retry_count}/{max_tracker_retries})")
+                        f"PeerConnectionPool - Retrying tracker in {wait_time} seconds (attempt {retry_count}/{max_tracker_retries})")
                     await asyncio.sleep(wait_time)
                 else:
-                    self.logger.error(f"Failed to retrieve peers after {max_tracker_retries} attempts")
+                    self.logger.error(f"PeerConnectionPool - Failed to retrieve peers after {max_tracker_retries} attempts")
                     break
 
     async def _get_bitfield_with_timeout(self, peer, piece_dict):
@@ -134,7 +136,7 @@ class PeerConnectionPool:
         try:
             return await asyncio.wait_for(self.get_bitfield(peer, piece_dict), timeout=5)
         except asyncio.TimeoutError:
-            self.logger.warning(f"Timeout waiting for bitfield from {peer.ip}:{peer.port}")
+            self.logger.warning(f"PeerConnectionPool - Timeout waiting for bitfield from {peer.ip}:{peer.port}")
             return False
 
     async def get_bitfield(self, peer, piece_dict):
@@ -162,7 +164,7 @@ class PeerConnectionPool:
                     # Bitfield message (ID = 5)
                     if msg_id_int == 5:
                         self.logger.debug(
-                            f"Received bitfield message from {peer.ip}:{peer.port}, payload length: {payload_len}")
+                            f"PeerConnectionPool - Received bitfield message from {peer.ip}:{peer.port}, payload length: {payload_len}")
                         payload = await reader.readexactly(payload_len)
 
                         # Parse bitfield to determine which pieces the peer has
@@ -188,7 +190,7 @@ class PeerConnectionPool:
                             self.peer_stats[peer]['response_time'] = time.time() - start_time
 
                         self.logger.info(
-                            f"Peer {peer.ip}:{peer.port} has {len(available_pieces)}/{self.total_pieces} pieces "
+                            f"PeerConnectionPool - Peer {peer.ip}:{peer.port} has {len(available_pieces)}/{self.total_pieces} pieces "
                             f"available")
                         return True
 
@@ -197,11 +199,11 @@ class PeerConnectionPool:
                         await reader.readexactly(payload_len)
 
                 except asyncio.IncompleteReadError:
-                    self.logger.error(f"Incomplete read from {peer.ip}:{peer.port}")
+                    self.logger.error(f"PeerConnectionPool - Incomplete read from {peer.ip}:{peer.port}")
                     return False
 
         except Exception as e:
-            self.logger.error(f"Error getting bitfield from {peer.ip}:{peer.port}: {e}")
+            self.logger.error(f"PeerConnectionPool - Error getting bitfield from {peer.ip}:{peer.port}: {e}")
             return False
 
     async def _handle_peer_with_timeout(self, peer, peer_results, piece_dict, retry_count=0):
@@ -212,7 +214,7 @@ class PeerConnectionPool:
                 timeout=self.connection_timeout
             )
         except asyncio.TimeoutError:
-            self.logger.error(f"Timeout handling peer {peer.ip}:{peer.port}")
+            self.logger.error(f"PeerConnectionPool - Timeout handling peer {peer.ip}:{peer.port}")
             peer_results[peer] = False
 
             # Retry logic
@@ -220,7 +222,7 @@ class PeerConnectionPool:
                 # Exponential backoff
                 retry_delay = self.retry_delay_base * (2 ** retry_count) * (0.5 + random.random())
                 self.logger.info(
-                    f"Scheduling retry for {peer.ip}:{peer.port} in {retry_delay:.2f}s "
+                    f"PeerConnectionPool - Scheduling retry for {peer.ip}:{peer.port} in {retry_delay:.2f}s "
                     f"(attempt {retry_count + 1}/{self.max_retries})")
 
                 # Add to failed peers for later retry
@@ -228,7 +230,7 @@ class PeerConnectionPool:
 
             return False
 
-    async def _handle_peer(self, peer, peer_results, piece_dict, retry_count=0):
+    async def _handle_peer(self, peer: _Peer, peer_results, piece_dict, retry_count=0):
         """Handle connection and communication with a peer with retry logic"""
         self.peer_stats[peer]['connection_attempts'] += 1
 
@@ -236,31 +238,33 @@ class PeerConnectionPool:
             try:
                 # Mark peer as active
                 self.active_peers.add(peer)
+                # After connect & handshake (inside context), send interested
+                await peer.connect()
+                await peer.send_interested()
 
-                async with peer:
-                    # After connect & handshake (inside context), send interested
-                    await peer.send_interested()
+                # Retrieve bitfield info
+                success = await self._get_bitfield_with_timeout(peer, piece_dict)
 
-                    # Retrieve bitfield info
-                    success = await self._get_bitfield_with_timeout(peer, piece_dict)
+                if success:
+                    # Update peer stats
+                    self.peer_stats[peer]['successful_connections'] += 1
+                    self.peer_stats[peer]['last_seen'] = time.time()
 
-                    if success:
-                        # Update peer stats
-                        self.peer_stats[peer]['successful_connections'] += 1
-                        self.peer_stats[peer]['last_seen'] = time.time()
+                    # Set up pipelining for this peer if available pieces
+                    if peer in self.peer_stats and self.peer_stats[peer]['available_pieces']:
+                        await self._setup_pipeline(peer)
 
-                        # Set up pipelining for this peer if available pieces
-                        if peer in self.peer_stats and self.peer_stats[peer]['available_pieces']:
-                            await self._setup_pipeline(peer)
+                    # Update score for prioritization
+                    self._update_peer_score(peer)
 
-                        # Update score for prioritization
-                        self._update_peer_score(peer)
-
-                    peer_results[peer] = success
-                    return success
+                peer_results[peer] = success
+                return success
 
             except Exception as e:
-                self.logger.error(f"Error handling peer {peer.ip}:{peer.port}: {e}")
+                self.logger.error(f"PeerConnectionPool - Error handling peer {peer.ip}:{peer.port}: {type(e).__name__}: {e}")
+                self.logger.debug("PeerConnectionPool - Traceback:\n" + traceback.format_exc())
+                self.logger.error(f"PeerConnectionPool - Disconnecting {peer.ip}:{peer.port}")
+                await peer.disconnect()
                 peer_results[peer] = False
 
                 # Retry logic
@@ -323,7 +327,7 @@ class PeerConnectionPool:
             return
 
         self.logger.debug(
-            f"Setting up pipeline for peer {peer.ip}:{peer.port} with {len(available_pieces)} available pieces")
+            f"PeerConnectionPool - Setting up pipeline for peer {peer.ip}:{peer.port} with {len(available_pieces)} available pieces")
 
         # Queue up pipeline_size requests
         pieces_to_request = list(available_pieces)[:self.pipeline_size]
@@ -335,14 +339,14 @@ class PeerConnectionPool:
         for piece_idx in pieces_to_request:
             self.request_queue.append((peer, piece_idx))
 
-        self.logger.debug(f"Queued {len(pieces_to_request)} piece requests for {peer.ip}:{peer.port}")
+        self.logger.debug(f"PeerConnectionPool - Queued {len(pieces_to_request)} piece requests for {peer.ip}:{peer.port}")
 
     async def _retry_failed_peers(self, peer_results, piece_dict):
         """Retry connecting to failed peers with exponential backoff"""
         if not self.failed_peers:
             return
 
-        self.logger.info(f"Retrying {len(self.failed_peers)} failed peers")
+        self.logger.info(f"PeerConnectionPool - Retrying {len(self.failed_peers)} failed peers")
         retry_tasks = []
 
         # Process each failed peer
@@ -361,7 +365,7 @@ class PeerConnectionPool:
         if not self.request_queue:
             return
 
-        self.logger.info(f"Processing {len(self.request_queue)} pipelined requests")
+        self.logger.info(f"PeerConnectionPool - Processing {len(self.request_queue)} pipelined requests")
 
         # Group requests by peer for efficient processing
         requests_by_peer = defaultdict(list)
@@ -387,7 +391,7 @@ class PeerConnectionPool:
                 timeout=5
             )
         except asyncio.TimeoutError:
-            self.logger.error(f"Timeout processing pipelined requests for {peer.ip}:{peer.port}")
+            self.logger.error(f"PeerConnectionPool - Timeout processing pipelined requests for {peer.ip}:{peer.port}")
             return False
 
     async def _process_peer_requests(self, peer, piece_indices):
@@ -395,7 +399,7 @@ class PeerConnectionPool:
         if not piece_indices:
             return
 
-        self.logger.debug(f"Processing {len(piece_indices)} pipelined requests for {peer.ip}:{peer.port}")
+        self.logger.debug(f"PeerConnectionPool - Processing {len(piece_indices)} pipelined requests for {peer.ip}:{peer.port}")
 
         try:
 
@@ -403,7 +407,7 @@ class PeerConnectionPool:
             for piece_idx in piece_indices:
                 # In a real implementation, you would send actual piece request messages here
                 # For this example, we'll just log that we're sending the request
-                self.logger.debug(f"Sending pipelined request for piece {piece_idx} to {peer.ip}:{peer.port}")
+                self.logger.debug(f"PeerConnectionPool - Sending pipelined request for piece {piece_idx} to {peer.ip}:{peer.port}")
 
                 # Simulate sending request (in real code, you'd actually send BitTorrent request message)
                 # Example of what to send (not actually sending in this demo):
@@ -415,10 +419,10 @@ class PeerConnectionPool:
 
             # In a real implementation, you would then read and process all responses
             # For this example, we'll just log that we're done
-            self.logger.debug(f"Completed sending {len(piece_indices)} requests to {peer.ip}:{peer.port}")
+            self.logger.debug(f"PeerConnectionPool - Completed sending {len(piece_indices)} requests to {peer.ip}:{peer.port}")
 
         except Exception as e:
-            self.logger.error(f"Error processing pipelined requests for {peer.ip}:{peer.port}: {e}")
+            self.logger.error(f"PeerConnectionPool - Error processing pipelined requests for {peer.ip}:{peer.port}: {e}")
             return False
 
         return True
@@ -441,15 +445,15 @@ class PeerConnectionPool:
                 peer = self.peers[i]
                 if peer in self.peer_stats:
                     score = self.peer_stats[peer]['score']
-                    self.logger.info(f"  {i + 1}. {peer.ip}:{peer.port} - Score: {score:.4f}")
+                    self.logger.info(f"PeerConnectionPool -   {i + 1}. {peer.ip}:{peer.port} - Score: {score:.4f}")
 
     async def run(self):
         """Run the peer connection process to gather piece information with retry logic and pipelining"""
-        self.logger.info("Starting peer connection process.")
+        self.logger.info("PeerConnectionPool - Starting peer connection process.")
         await self._get_peers()
 
         if not self.peers:
-            self.logger.error("No peers available to connect.")
+            self.logger.error("PeerConnectionPool - No peers available to connect.")
             return None
 
         peer_results = {}
@@ -460,7 +464,7 @@ class PeerConnectionPool:
 
         # Process peers in batches to avoid overwhelming resources
         batch_size = min(len(self.peers), self.max_concurrent_connections)
-        self.logger.info(f"Processing {len(self.peers)} peers in batches of {batch_size}")
+        self.logger.info(f"PeerConnectionPool - Processing {len(self.peers)} peers in batches of {batch_size}")
 
         # Create initial tasks for all peers
         tasks = [self._handle_peer_with_timeout(peer, peer_results, piece_dict) for peer in self.peers]
@@ -482,23 +486,24 @@ class PeerConnectionPool:
                 missing_pieces.append(piece)
 
         if missing_pieces:
-            self.logger.warning(f"Missing {len(missing_pieces)} pieces out of {self.total_pieces}")
+            self.logger.warning(f"PeerConnectionPool - Missing {len(missing_pieces)} pieces out of {self.total_pieces}")
             if len(missing_pieces) < 20:  # Only log if the list is reasonably small
-                self.logger.warning(f"Missing pieces: {missing_pieces}")
+                self.logger.warning(f"PeerConnectionPool - Missing pieces: {missing_pieces}")
+            return False
         else:
-            self.logger.info(f"All {self.total_pieces} pieces are available from peers")
+            self.logger.info(f"PeerConnectionPool - All {self.total_pieces} pieces are available from peers")
 
         # Log summary
         successful_peers = sum(1 for result in peer_results.values() if result)
         success_rate = successful_peers / max(1, len(self.peers)) * 100
         self.logger.info(
-            f"Successfully connected to {successful_peers} out of {len(self.peers)} peers ({success_rate:.1f}%)")
+            f"PeerConnectionPool - Successfully connected to {successful_peers} out of {len(self.peers)} peers ({success_rate:.1f}%)")
 
         # Log piece availability summary
         pieces_with_peers = sum(1 for piece_id, peers_list in piece_dict.items() if peers_list)
         if pieces_with_peers > 0:
             self.logger.info(
-                f"Found {pieces_with_peers} "
+                f"PeerConnectionPool - Found {pieces_with_peers} "
                 f"pieces available from peers ({pieces_with_peers / self.total_pieces * 100:.1f}% of total)")
 
             # Find most and least available pieces
@@ -507,8 +512,8 @@ class PeerConnectionPool:
             if piece_availability:
                 most_available = max(piece_availability, key=lambda x: x[1])
                 least_available = min(piece_availability, key=lambda x: x[1])
-                self.logger.info(f"Most available piece: {most_available[0]} ({most_available[1]} peers)")
-                self.logger.info(f"Least available piece: {least_available[0]} ({least_available[1]} peers)")
+                self.logger.info(f"PeerConnectionPool - Most available piece: {most_available[0]} ({most_available[1]} peers)")
+                self.logger.info(f"PeerConnectionPool - Least available piece: {least_available[0]} ({least_available[1]} peers)")
 
         # Return the piece dictionary - THIS IS CRUCIAL TO MAINTAIN ORIGINAL FUNCTIONALITY
         return piece_dict

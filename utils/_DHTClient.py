@@ -21,6 +21,10 @@ class _DHTClient:
         ("87.98.162.88", 6881),  # dht.transmissionbt.com
         ("82.221.103.244", 6881),  # router.utorrent.com
         ("212.129.33.50", 6881),  # dht.aelitis.com
+        ("182.140.167.7", 6881),  # router.bitcomet.com
+        ("67.215.246.12", 6881),  # dht.aelitis.com (alt)
+        ("185.61.149.45", 6881),  # router.silotv.com
+        ("107.22.210.36", 6881),  # router.bittorrent.org
     ]
 
     def __init__(self, info_hash, logger: logging.Logger, node_id=None, max_nodes_per_request=8, socket_timeout=5):

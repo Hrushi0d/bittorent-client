@@ -5,14 +5,14 @@ from utils._Node import Node
 
 
 class RoutingTable:
-    def __init__(self, node_id, k=8, filename='routing_table.pkl'):
+    def __init__(self, node_id, k=32, filename='routing_table.pkl'):
         self.filename = filename
         self.node_id = node_id
         self.k = k
         self.buckets = [deque() for _ in range(160)]  # 160 buckets for each bit
 
     def __repr__(self):
-        return f'RoutingTable(filename={self.filename}, k={8})'
+        return f'RoutingTable(filename={self.filename}, k={self.k})'
 
     @staticmethod
     def xor_distance(id1: int, id2: int) -> int:

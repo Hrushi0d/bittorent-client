@@ -22,6 +22,9 @@ class Piece:
         self._status = new_status
         self._status_history.append((new_status, time.time()))
 
+    def status(self):
+        return self._status
+
     def reset_status(self):
         self.update_status(Piece.Status.NOT_STARTED)
 
