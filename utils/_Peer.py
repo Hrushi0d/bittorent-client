@@ -36,14 +36,17 @@ class Peer:
         self.interested_sent = False
         self.unchoked = False
         self.download_queue = DownloadQueue(logger=self.logger, port=self.port, ip=self.ip)
+        # asyncio.create_task(self.download_queue.retry_handler())
 
         # For pipelined block request/response matching
         self.pending_requests = {}  # (piece_index, block_offset): Future
         self.reader_task = None
         self.reader_task_running = False
+        self.response_processor_task = None
         self._reader_lock = asyncio.Lock()  # For handshake and initial messages
         self.bitfield = None
         self.bitfield_received_event = asyncio.Event()
+        self.response_queue = asyncio.Queue()  # <--- NEW QUEUE
 
     def __repr__(self):
         return (
@@ -119,6 +122,12 @@ class Peer:
                 await self.reader_task
             except asyncio.CancelledError:
                 pass
+        if self.response_processor_task:
+            self.response_processor_task.cancel()
+            try:
+                await self.response_processor_task
+            except asyncio.CancelledError:
+                pass
         if self.writer:
             self.writer.close()
             await self.writer.wait_closed()
@@ -180,6 +189,8 @@ class Peer:
             return  # Already running
         self.reader_task_running = True
         self.reader_task = asyncio.create_task(self._reader_dispatcher())
+        if not self.response_processor_task or self.response_processor_task.done():
+            self.response_processor_task = asyncio.create_task(self._process_responses())
 
     async def _reader_dispatcher(self):
         try:
@@ -196,15 +207,21 @@ class Peer:
                 msg_id_bytes = await self.reader.readexactly(1)
                 msg_id = msg_id_bytes[0]
                 payload = await self.reader.readexactly(length - 1) if length > 1 else b''
+                # Instead of processing message here, put it on the response queue
+                await self.response_queue.put((msg_id, payload))
+        except Exception as e:
+            self.logger.error(f"Peer - Reader dispatcher error: {e}")
 
+    async def _process_responses(self):
+        try:
+            while True:
+                msg_id, payload = await self.response_queue.get()
                 if msg_id == 7:  # PIECE
-                    # PIECE: <len=0009+X><id=7><index><begin><block>
                     if len(payload) < 8:
                         self.logger.warning(f"Peer - PIECE payload too short")
                         continue
                     index, offset = struct.unpack("!II", payload[:8])
                     block_data = payload[8:]
-
                     key = (index, offset)
                     fut = self.pending_requests.pop(key, None)
                     if fut:
@@ -227,7 +244,7 @@ class Peer:
                         f"Peer - Dispatcher received message id {msg_id} from {self.ip}:{self.port}"
                     )
         except Exception as e:
-            self.logger.error(f"Peer - Reader dispatcher error: {e}")
+            self.logger.error(f"Peer - Response processor error: {e}")
 
     async def request_block(
             self,
@@ -308,32 +325,32 @@ class Peer:
                 piece_data = bytearray(piece_length)
                 received_blocks = set()
                 pending_blocks = set()
-                block_futures = {}
-
-                async def fetch_block(block_index):
-                    offset = block_index * BLOCK_SIZE
-                    block_size = min(BLOCK_SIZE, piece_length - offset)
-                    try:
-                        block = await self.request_block(piece_index, offset, block_size)
-                        return (block_index, block)
-                    except Exception as e:
-                        self.logger.warning(
-                            f"Peer - Failed to fetch block {block_index} of piece {piece_index}: {e}"
-                        )
-                        raise
-
                 next_block_index = 0
 
+                # Map of block_index -> asyncio.Task for in-flight block requests
+                block_futures = {}
+
                 while len(received_blocks) < num_blocks:
-                    # Fill pipeline
-                    while (len(pending_blocks) < max_pipeline and
-                           next_block_index < num_blocks):
-                        fut = asyncio.create_task(fetch_block(next_block_index))
+                    # Pipeline new block requests up to max_pipeline
+                    while len(pending_blocks) < max_pipeline and next_block_index < num_blocks:
+                        offset = next_block_index * BLOCK_SIZE
+                        block_size = min(BLOCK_SIZE, piece_length - offset)
+
+                        async def fetch_block(block_idx, o, bsize):
+                            try:
+                                block = await self.request_block(piece_index, o, bsize)
+                                return (block_idx, block)
+                            except Exception as e:
+                                self.logger.warning(
+                                    f"Peer - Failed to fetch block {block_idx} of piece {piece_index}: {e}"
+                                )
+                                raise
+
+                        fut = asyncio.create_task(fetch_block(next_block_index, offset, block_size))
                         block_futures[next_block_index] = fut
                         pending_blocks.add(next_block_index)
                         next_block_index += 1
 
-                    # Wait for any block to finish
                     if not block_futures:
                         raise Exception("Peer - No block futures in progress, but piece not complete")
 
@@ -351,7 +368,7 @@ class Peer:
                             pending_blocks.remove(block_index)
                             del block_futures[block_index]
                         except Exception as e:
-                            # Block failed: remove from pending, retry in next outer loop
+                            # Remove the failed block from pending and futures, will be retried in next outer loop
                             failed_index = None
                             for idx, fut in block_futures.items():
                                 if fut == finished:
@@ -385,15 +402,8 @@ class Peer:
     async def wait_for_bitfield(self, timeout=5):
         """
         Wait for the bitfield message to be received from the peer.
-
-        Args:
-            timeout (int): Maximum time to wait in seconds
-
-        Returns:
-            bytes: The bitfield data or None if timeout occurred
         """
         try:
-            # Wait for the bitfield received event to be set with timeout
             await asyncio.wait_for(self.bitfield_received_event.wait(), timeout=timeout)
             return self.bitfield
         except asyncio.TimeoutError:

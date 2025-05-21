@@ -8,11 +8,10 @@ import socket
 import struct
 import time
 from collections import defaultdict, OrderedDict
-from typing import List, Dict, Set, Tuple, Optional, Any
 
 from utils._Bencode import Encoder, Decoder
-from utils._RoutingTable import RoutingTable
 from utils._Node import Node
+from utils._RoutingTable import RoutingTable
 
 
 class _DHTClient:

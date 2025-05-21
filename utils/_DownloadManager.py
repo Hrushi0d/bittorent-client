@@ -27,6 +27,8 @@ class DownloadManager:
         self.async_queue = async_queue
         self.active_peers = set()
         self.checker = DownloadChecker(piece_dict=self.piece_dict, peer_dict=self.peer_dict)
+        self._running = True
+        self._peer_tasks = []
 
     async def setup_requests(self):
         for piece in self.pieces_order:
@@ -53,7 +55,7 @@ class DownloadManager:
         self.logger.info(f'DownloadManager - started downloading')
 
         async def limited_download(peer: Peer):
-            while True:
+            while self._running:
                 async with self.piece_semaphore:
                     try:
                         piece = await peer.download_queue.pop()
@@ -77,6 +79,15 @@ class DownloadManager:
                         piece.update_status(Piece.Status.FAILED)
                         self.checker.mark_peer_failed_for_piece(peer=peer, piece_index=piece.index)
 
-        tasks = [asyncio.create_task(limited_download(peer)) for peer in self.active_peers]
-        await asyncio.gather(*tasks)
+        self._peer_tasks = [asyncio.create_task(limited_download(peer)) for peer in self.active_peers]
+        await asyncio.gather(*self._peer_tasks)
         self.logger.info('DownloadManager - all downloads complete.')
+
+    async def stop(self):
+        """Signal all download loops to exit and cancel tasks."""
+        self._running = False
+        for task in self._peer_tasks:
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(*self._peer_tasks, return_exceptions=True)
+        self.logger.info('DownloadManager - stopped.')

@@ -29,22 +29,35 @@ selected_mode = mode[0]  # Change index to select other modes
 logger = logging.getLogger(__name__)
 
 
-async def progress_reporter(download_manager, interval=1.0):
+async def progress_reporter(download_manager, interval=1.0, spinner=None):
     while True:
         try:
             report = download_manager.checker.progress_report()
-            print(
+            progress_message = (
                 f"[Progress] {report['completed_pieces']}/{report['total_pieces']} "
                 f"({report['fraction_done'] * 100:.1f}%) - "
                 f"Elapsed: {report['time_elapsed_seconds']:.1f}s"
             )
+
+            if spinner:
+                spinner.text = f"Downloading... {progress_message}"
+            else:
+                print(progress_message)
+
+            if report['completed_pieces'] >= report['total_pieces']:
+                download_manager.checker.finished = True
+                return True
+
             await asyncio.sleep(interval)
         except Exception as e:
-            # Optionally log error, then break or keep going
-            break
+            logger.exception("Progress reporter encountered an error")
+            return False
 
 
 async def async_main():
+    main_spinner = None
+    active_tasks = []
+
     try:
         logger.info("Main - Starting PeerGetter BitTorrent client...")
         start_time = time.time()
@@ -54,7 +67,7 @@ async def async_main():
             torrent, decode_time = None, None
             try:
                 t0 = time.time()
-                with open('../Factorio [FitGirl Repack].torrent', 'rb') as f:
+                with open('[Kyockcho] [Completed] Maid Education Fallen Aristocrat (English).torrent', 'rb') as f:
                     meta_info = f.read()
                     torrent = Decoder(meta_info).decode()
                 decode_time = time.time() - t0
@@ -131,35 +144,83 @@ async def async_main():
                 logger.exception("Main - DownloadManager initialization failed.")
                 raise e
 
-        # === Step 5: Start Download ===
-        with yaspin(Spinners.line, text="Starting download...") as spinner:
-            try:
-                t0 = time.time()
+        # === Step 5: Start Download with unified spinner ===
+        main_spinner = yaspin(Spinners.line, text="Starting download...")
+        main_spinner.start()
 
-                downloader = asyncio.create_task(download_manager.start())
-                writer = asyncio.create_task(file_manager.start_writer())
+        try:
+            t0 = time.time()
 
-                progress_task = asyncio.create_task(progress_reporter(download_manager))
-                await asyncio.gather(downloader, writer)
-                progress_task.cancel()
+            # Create tasks for download and writing
+            downloader_task = asyncio.create_task(download_manager.start())
+            writer_task = asyncio.create_task(file_manager.start_writer())
+            active_tasks.extend([downloader_task, writer_task])
+
+            # Use the progress reporter with the main spinner
+            is_complete = await progress_reporter(download_manager, interval=1.0, spinner=main_spinner)
+
+            if is_complete:
+                # Signal managers to stop gracefully
+                await download_manager.stop()
+                await file_manager.stop()
+
+                # Wait for any remaining tasks to complete
+                await asyncio.gather(*active_tasks, return_exceptions=True)
 
                 elapsed = time.time() - t0
-                spinner.ok("✔")
-                spinner.write(f"✓ Download completed in {elapsed:.2f} seconds")
-                logger.info(f"Main - Download ran for {elapsed:.2f} seconds.")
-            except asyncio.CancelledError:
-                logger.warning("Main - Tasks were cancelled.")
-                downloader.cancel()
-                writer.cancel()
-                await asyncio.gather(downloader, writer, return_exceptions=True)
-                raise
-            except KeyboardInterrupt:
-                spinner.fail("🛑")
-                spinner.write("✖ Download interrupted by user (Ctrl+C)")
-                logger.warning("Main - Download manually interrupted by user.")
+                main_spinner.ok("✔")
+                main_spinner.write(f"✓ Download completed in {elapsed:.2f} seconds")
+                logger.info(f"Main - Download completed in {elapsed:.2f} seconds.")
+            else:
+                main_spinner.fail("❌")
+                main_spinner.write("✖ Download failed to complete properly")
+                logger.error("Main - Download did not complete successfully.")
+
+        except asyncio.CancelledError:
+            logger.warning("Main - Tasks were cancelled.")
+            main_spinner.fail("🛑")
+            main_spinner.write("✖ Download was cancelled")
+            # Signal managers to stop and cancel all tasks
+            await download_manager.stop()
+            await file_manager.stop()
+            for task in active_tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*active_tasks, return_exceptions=True)
+            raise
+
+        except KeyboardInterrupt:
+            main_spinner.fail("🛑")
+            main_spinner.write("✖ Download interrupted by user (Ctrl+C)")
+            logger.warning("Main - Download manually interrupted by user.")
+            # Signal managers to stop and cancel all tasks
+            await download_manager.stop()
+            await file_manager.stop()
+            for task in active_tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*active_tasks, return_exceptions=True)
+
+        except Exception as e:
+            main_spinner.fail("💥")
+            main_spinner.write(f"✖ Download error: {str(e)}")
+            logger.exception("Main - Download failed with exception.")
+            # Signal managers to stop and cancel all tasks
+            await download_manager.stop()
+            await file_manager.stop()
+            for task in active_tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*active_tasks, return_exceptions=True)
+            raise e
+
     except Exception as exp:
         logger.exception("Main - Download failed.")
         raise exp
+    finally:
+        # Ensure the main spinner is stopped if it exists
+        if main_spinner:
+            main_spinner.stop()
 
 
 if __name__ == "__main__":

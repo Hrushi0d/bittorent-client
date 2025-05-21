@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Dict, Optional, List, Set
+from typing import Dict, Optional, List, Set, Any
 from dataclasses import dataclass, field
 
 from utils._Piece import Piece
@@ -31,6 +31,10 @@ class AsyncQueue:
         self.logger = logger
 
     async def push(self, piece: Piece, piece_data: bytes):
+        if piece is None and piece_data is None:
+            # Sentinel for shutdown
+            await self._queue.put(None)
+            return
         piece_info = _PieceInfo(index=piece.index,data=piece_data,hash_value=piece.hash_value)
         if self._closed:
             self.logger.warning("AsyncQueue - Attempted to push to a closed queue.")
@@ -58,10 +62,12 @@ class AsyncQueue:
         self._listeners.clear()
         self.logger.debug(f"AsyncQueue - Pushed piece {piece_info.index} (size={len(piece_data)} bytes) to queue.")
 
-    async def pop(self) -> _PieceInfo:
+    async def pop(self) -> _PieceInfo | None:
         if self._closed and self._queue.empty():
             raise RuntimeError("AsyncQueue - Queue is closed and empty")
         piece = await self._queue.get()
+        if piece is None:
+            return None
         self._piece_set.discard(piece.index)
         self._processing.add(piece.index)
         return piece

@@ -5,74 +5,78 @@ import time
 
 from utils._Piece import Piece
 
+import time
+from typing import Dict, Set, List, Tuple, Optional
+
 
 class DownloadChecker:
-    def __init__(self, peer_dict: dict, piece_dict: dict, total_pieces: int = None):
+    __slots__ = (
+        "peer_dict", "piece_dict", "completed_pieces", "finished",
+        "failed_peers_for_piece", "start_time", "total_pieces"
+    )
+
+    def __init__(
+            self,
+            peer_dict,
+            piece_dict,
+            total_pieces=None
+    ):
         self.peer_dict = peer_dict  # peer -> set of piece indices
         self.piece_dict = piece_dict  # piece index -> list of peers
         self.completed_pieces = set()
-
-        # Track peers that have failed to download a piece:
-        # piece_index -> set of peers that failed
+        self.finished = False
         self.failed_peers_for_piece = {}
-
-        # Progress tracking
         self.start_time = time.time()
-        if total_pieces is not None:
-            self.total_pieces = total_pieces
-        else:
-            # Infer from piece_dict if not provided
-            self.total_pieces = len(piece_dict)
+        self.total_pieces = total_pieces if total_pieces is not None else len(piece_dict)
 
-    def mark_piece_completed(self, piece_index):
+    def mark_piece_completed(self, piece_index: int) -> None:
         self.completed_pieces.add(piece_index)
-        # Once completed, clear failure record since piece is done
-        if piece_index in self.failed_peers_for_piece:
-            del self.failed_peers_for_piece[piece_index]
+        self.failed_peers_for_piece.pop(piece_index, None)  # Remove record if exists
 
-    def mark_peer_failed_for_piece(self, peer, piece_index):
-        if piece_index not in self.failed_peers_for_piece:
-            self.failed_peers_for_piece[piece_index] = set()
-        self.failed_peers_for_piece[piece_index].add(peer)
+    def mark_peer_failed_for_piece(self, peer: Tuple[str, int], piece_index: int) -> None:
+        failed = self.failed_peers_for_piece.setdefault(piece_index, set())
+        failed.add(peer)
 
-    def is_piece_downloadable(self, piece_index):
-        """Returns True if piece is not completed and at least one peer remains who hasn't failed."""
+    def is_piece_downloadable(self, piece_index: int) -> bool:
         if piece_index in self.completed_pieces:
-            return False  # Already done
-
-        peers = set(self.piece_dict.get(piece_index, []))
-        failed_peers = self.failed_peers_for_piece.get(piece_index, set())
-
-        # If all peers have failed, piece is not downloadable
-        return not peers.issubset(failed_peers)
-
-    def peer_has_pending_pieces(self, ip, port):
-        """Check if peer has any piece that is downloadable."""
-        for piece in self.peer_dict.get((ip, port), set()):
-            if self.is_piece_downloadable(piece):
+            return False
+        peers = self.piece_dict.get(piece_index)
+        if not peers:
+            return False
+        failed = self.failed_peers_for_piece.get(piece_index)
+        if not failed:
+            return True  # No failures recorded
+        # If all peers have failed, not downloadable
+        for peer in peers:
+            if peer not in failed:
                 return True
         return False
 
-    def get_progress(self):
-        """Returns (completed_pieces, total_pieces, fraction_done)."""
+    def peer_has_pending_pieces(self, ip: str, port: int) -> bool:
+        pieces = self.peer_dict.get((ip, port))
+        if not pieces:
+            return False
+        is_downloadable = self.is_piece_downloadable
+        for piece in pieces:
+            if is_downloadable(piece):
+                return True
+        return False
+
+    def get_progress(self) -> Tuple[int, int, float]:
         done = len(self.completed_pieces)
         total = self.total_pieces
-        fraction = done / total if total else 0.0
-        return done, total, fraction
+        return done, total, done / total if total else 0.0
 
-    def get_time_elapsed(self):
-        """Returns time elapsed since initialization in seconds."""
+    def get_time_elapsed(self) -> float:
         return time.time() - self.start_time
 
-    def progress_report(self):
-        """Returns a dictionary with progress stats."""
+    def progress_report(self) -> dict:
         done, total, fraction = self.get_progress()
-        elapsed = self.get_time_elapsed()
         return {
             "completed_pieces": done,
             "total_pieces": total,
             "fraction_done": fraction,
-            "time_elapsed_seconds": elapsed
+            "time_elapsed_seconds": self.get_time_elapsed()
         }
 
 
@@ -99,7 +103,7 @@ class DownloadQueue:
         if self._closed:
             self.logger.warning(f"DownloadQueue - Attempt to push to closed queue for peer {self.ip}:{self.port}")
             return
-        self.logger.info(f'DownloadQueue - pushing piece {piece.index} into requests of peer {self.ip}:{self.port}')
+        # self.logger.info(f'DownloadQueue - pushing piece {piece.index} into requests of peer {self.ip}:{self.port}')
         try:
             await self.requests.put(piece)
         except Exception as e:
@@ -118,7 +122,6 @@ class DownloadQueue:
                     self.logger.info(f'DownloadQueue - queue closed and empty for peer {self.ip}:{self.port}')
                     raise QueueClosed()
 
-                self.logger.info(f'DownloadQueue - pulling request from the requests of peer {self.ip}:{self.port}')
                 piece = await self.requests.get()
 
                 if piece.status() == Piece.Status.COMPLETED:
@@ -126,7 +129,7 @@ class DownloadQueue:
                     continue  # Skip and try next
 
                 if piece.status() == Piece.Status.IN_PROGRESS:
-                    self.logger.info(f'DownloadQueue - piece {piece.index} is already in progress, retrying later')
+                    # self.logger.info(f'DownloadQueue - piece {piece.index} is already in progress, retrying later')
                     await self.push(piece)
                     self.requests.task_done()
                     await asyncio.sleep(random.uniform(0.05, 0.15))
@@ -134,6 +137,7 @@ class DownloadQueue:
 
                 self.requests.task_done()
                 if self.checker.is_piece_downloadable(piece_index=piece.index):
+                    self.logger.info(f'DownloadQueue - pulling request from the requests of peer {self.ip}:{self.port}')
                     return piece
 
         except asyncio.CancelledError:
