@@ -45,6 +45,7 @@ class PeerConnectionPool:
         self.pipeline_size = 5  # Number of requests to pipeline
         self.request_queue = deque()  # Queue for pending requests
 
+
     def _calculate_total_pieces(self):
         """Calculate total pieces once during initialization"""
         if b'info' not in self.torrent:
@@ -132,79 +133,101 @@ class PeerConnectionPool:
                     break
 
     async def _get_bitfield_with_timeout(self, peer, piece_dict):
-        """Get the bitfield message with a timeout wrapper"""
+        """Get the bitfield from the peer using its event-driven interface."""
         try:
-            return await asyncio.wait_for(self.get_bitfield(peer, piece_dict), timeout=5)
-        except asyncio.TimeoutError:
-            self.logger.warning(f"PeerConnectionPool - Timeout waiting for bitfield from {peer.ip}:{peer.port}")
-            return False
-
-    async def get_bitfield(self, peer, piece_dict):
-        """Get the bitfield message from a peer and parse it into the piece dictionary"""
-        reader = peer.reader
-        start_time = time.time()
-
-        # No need for timeout context here as we're using the wrapper function with wait_for
-        try:
-            # Wait for the bitfield message (ID = 5)
-            while True:
-                try:
-                    # Read message length (4 bytes)
-                    length_bytes = await reader.readexactly(4)
-                    length = int.from_bytes(length_bytes, 'big')
-
-                    if length == 0:
-                        continue  # keep-alive message, ignore
-
-                    # Read message ID (1 byte)
-                    msg_id = await reader.readexactly(1)
-                    msg_id_int = ord(msg_id)
-                    payload_len = length - 1
-
-                    # Bitfield message (ID = 5)
-                    if msg_id_int == 5:
-                        self.logger.debug(
-                            f"PeerConnectionPool - Received bitfield message from {peer.ip}:{peer.port}, payload length: {payload_len}")
-                        payload = await reader.readexactly(payload_len)
-
-                        # Parse bitfield to determine which pieces the peer has
-                        available_pieces = set()
-                        for byte_idx, byte in enumerate(payload):
-                            for bit_idx in range(8):
-                                piece_idx = byte_idx * 8 + bit_idx
-
-                                # Ensure we don't exceed the total pieces
-                                if piece_idx >= self.total_pieces:
-                                    break
-
-                                # Check if bit is set (peer has this piece)
-                                if byte & (128 >> bit_idx):
-                                    # Add peer to the list of peers that have this piece
-                                    piece_dict[piece_idx].append(peer)
-                                    available_pieces.add(piece_idx)
-
-                        # Update peer stats
-                        if peer in self.peer_stats:
-                            self.peer_stats[peer]['available_pieces'] = available_pieces
-                            self.peer_stats[peer]['last_seen'] = time.time()
-                            self.peer_stats[peer]['response_time'] = time.time() - start_time
-
-                        self.logger.info(
-                            f"PeerConnectionPool - Peer {peer.ip}:{peer.port} has {len(available_pieces)}/{self.total_pieces} pieces "
-                            f"available")
-                        return True
-
-                    # Handle other message types (read and discard)
-                    elif payload_len > 0:
-                        await reader.readexactly(payload_len)
-
-                except asyncio.IncompleteReadError:
-                    self.logger.error(f"PeerConnectionPool - Incomplete read from {peer.ip}:{peer.port}")
-                    return False
-
+            bitfield = await peer.wait_for_bitfield(timeout=5)
+            if bitfield is None:
+                self.logger.warning(f"PeerConnectionPool - Timeout waiting for bitfield from {peer.ip}:{peer.port}")
+                return False
+            # Parse bitfield to determine which pieces the peer has
+            available_pieces = set()
+            for byte_idx, byte in enumerate(bitfield):
+                for bit_idx in range(8):
+                    piece_idx = byte_idx * 8 + bit_idx
+                    if piece_idx >= self.total_pieces:
+                        break
+                    if byte & (128 >> bit_idx):
+                        piece_dict[piece_idx].append(peer)
+                        available_pieces.add(piece_idx)
+            # Update peer stats
+            if peer in self.peer_stats:
+                self.peer_stats[peer]['available_pieces'] = available_pieces
+                self.peer_stats[peer]['last_seen'] = time.time()
+                self.peer_stats[peer]['response_time'] = 0  # You can update this if you want timing
+            self.logger.info(
+                f"PeerConnectionPool - Peer {peer.ip}:{peer.port} has {len(available_pieces)}/{self.total_pieces} pieces available"
+            )
+            return True
         except Exception as e:
             self.logger.error(f"PeerConnectionPool - Error getting bitfield from {peer.ip}:{peer.port}: {e}")
             return False
+
+    # async def get_bitfield(self, peer, piece_dict):
+    #     """Get the bitfield message from a peer and parse it into the piece dictionary"""
+    #     reader = peer.reader
+    #     start_time = time.time()
+    #
+    #     # No need for timeout context here as we're using the wrapper function with wait_for
+    #     try:
+    #         # Wait for the bitfield message (ID = 5)
+    #         while True:
+    #             try:
+    #                 # Read message length (4 bytes)
+    #                 length_bytes = await reader.readexactly(4)
+    #                 length = int.from_bytes(length_bytes, 'big')
+    #
+    #                 if length == 0:
+    #                     continue  # keep-alive message, ignore
+    #
+    #                 # Read message ID (1 byte)
+    #                 msg_id = await reader.readexactly(1)
+    #                 msg_id_int = ord(msg_id)
+    #                 payload_len = length - 1
+    #
+    #                 # Bitfield message (ID = 5)
+    #                 if msg_id_int == 5:
+    #                     self.logger.debug(
+    #                         f"PeerConnectionPool - Received bitfield message from {peer.ip}:{peer.port}, payload length: {payload_len}")
+    #                     payload = await reader.readexactly(payload_len)
+    #
+    #                     # Parse bitfield to determine which pieces the peer has
+    #                     available_pieces = set()
+    #                     for byte_idx, byte in enumerate(payload):
+    #                         for bit_idx in range(8):
+    #                             piece_idx = byte_idx * 8 + bit_idx
+    #
+    #                             # Ensure we don't exceed the total pieces
+    #                             if piece_idx >= self.total_pieces:
+    #                                 break
+    #
+    #                             # Check if bit is set (peer has this piece)
+    #                             if byte & (128 >> bit_idx):
+    #                                 # Add peer to the list of peers that have this piece
+    #                                 piece_dict[piece_idx].append(peer)
+    #                                 available_pieces.add(piece_idx)
+    #
+    #                     # Update peer stats
+    #                     if peer in self.peer_stats:
+    #                         self.peer_stats[peer]['available_pieces'] = available_pieces
+    #                         self.peer_stats[peer]['last_seen'] = time.time()
+    #                         self.peer_stats[peer]['response_time'] = time.time() - start_time
+    #
+    #                     self.logger.info(
+    #                         f"PeerConnectionPool - Peer {peer.ip}:{peer.port} has {len(available_pieces)}/{self.total_pieces} pieces "
+    #                         f"available")
+    #                     return True
+    #
+    #                 # Handle other message types (read and discard)
+    #                 elif payload_len > 0:
+    #                     await reader.readexactly(payload_len)
+    #
+    #             except asyncio.IncompleteReadError:
+    #                 self.logger.error(f"PeerConnectionPool - Incomplete read from {peer.ip}:{peer.port}")
+    #                 return False
+    #
+    #     except Exception as e:
+    #         self.logger.error(f"PeerConnectionPool - Error getting bitfield from {peer.ip}:{peer.port}: {e}")
+    #         return False
 
     async def _handle_peer_with_timeout(self, peer, peer_results, piece_dict, retry_count=0):
         """Handle peer connection with timeout wrapper"""

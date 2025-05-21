@@ -20,7 +20,7 @@ class DownloadManager:
         for piece in self.pieces_order:
             peers = self.piece_dict[piece.index]  # use piece.index instead of piece directly
             for peer in peers:
-                self.peer_dict[peer].append(piece)
+                self.peer_dict[(peer.ip, peer.port)].append(piece.index)
 
         self.piece_semaphore = asyncio.Semaphore(max_concurrent_pieces)
         self.block_semaphore = asyncio.Semaphore(max_concurrent_blocks)
@@ -49,13 +49,12 @@ class DownloadManager:
         await manager.setup_requests()
         return manager
 
-    async def start(self, max_concurrent_downloads=50):
-        semaphore = asyncio.Semaphore(max_concurrent_downloads)
+    async def start(self):
         self.logger.info(f'DownloadManager - started downloading')
 
         async def limited_download(peer: Peer):
             while True:
-                async with semaphore:
+                async with self.piece_semaphore:
                     try:
                         piece = await peer.download_queue.pop()
                         piece.update_status(Piece.Status.IN_PROGRESS)
@@ -71,10 +70,12 @@ class DownloadManager:
                         data = await peer.download_piece(piece)
                         await self.async_queue.push(piece=piece, piece_data=data)
                         piece.update_status(Piece.Status.COMPLETED)
+                        self.checker.mark_piece_completed(piece_index=piece.index)
                     except Exception as e:
                         self.logger.error(
                             f"DownloadManager - failed downloading piece {piece.index} from {peer.ip}:{peer.port}: {e}")
                         piece.update_status(Piece.Status.FAILED)
+                        self.checker.mark_peer_failed_for_piece(peer=peer, piece_index=piece.index)
 
         tasks = [asyncio.create_task(limited_download(peer)) for peer in self.active_peers]
         await asyncio.gather(*tasks)

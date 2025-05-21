@@ -1,19 +1,28 @@
 import asyncio
 import logging
 import random
+import time
 
 from utils._Piece import Piece
 
 
 class DownloadChecker:
-    def __init__(self, peer_dict: dict, piece_dict: dict):
+    def __init__(self, peer_dict: dict, piece_dict: dict, total_pieces: int = None):
         self.peer_dict = peer_dict  # peer -> set of piece indices
-        self.piece_dict = piece_dict # piece index -> list of peers
+        self.piece_dict = piece_dict  # piece index -> list of peers
         self.completed_pieces = set()
 
         # Track peers that have failed to download a piece:
         # piece_index -> set of peers that failed
         self.failed_peers_for_piece = {}
+
+        # Progress tracking
+        self.start_time = time.time()
+        if total_pieces is not None:
+            self.total_pieces = total_pieces
+        else:
+            # Infer from piece_dict if not provided
+            self.total_pieces = len(piece_dict)
 
     def mark_piece_completed(self, piece_index):
         self.completed_pieces.add(piece_index)
@@ -37,12 +46,34 @@ class DownloadChecker:
         # If all peers have failed, piece is not downloadable
         return not peers.issubset(failed_peers)
 
-    def peer_has_pending_pieces(self, peer):
+    def peer_has_pending_pieces(self, ip, port):
         """Check if peer has any piece that is downloadable."""
-        for piece in self.peer_dict.get(peer, set()):
+        for piece in self.peer_dict.get((ip, port), set()):
             if self.is_piece_downloadable(piece):
                 return True
         return False
+
+    def get_progress(self):
+        """Returns (completed_pieces, total_pieces, fraction_done)."""
+        done = len(self.completed_pieces)
+        total = self.total_pieces
+        fraction = done / total if total else 0.0
+        return done, total, fraction
+
+    def get_time_elapsed(self):
+        """Returns time elapsed since initialization in seconds."""
+        return time.time() - self.start_time
+
+    def progress_report(self):
+        """Returns a dictionary with progress stats."""
+        done, total, fraction = self.get_progress()
+        elapsed = self.get_time_elapsed()
+        return {
+            "completed_pieces": done,
+            "total_pieces": total,
+            "fraction_done": fraction,
+            "time_elapsed_seconds": elapsed
+        }
 
 
 class QueueClosed(Exception):
@@ -80,6 +111,9 @@ class DownloadQueue:
     async def pop(self):
         try:
             while True:
+                if not self.checker.peer_has_pending_pieces(self.ip, self.port):
+                    self._closed = True
+
                 if self._closed and self.requests.empty():
                     self.logger.info(f'DownloadQueue - queue closed and empty for peer {self.ip}:{self.port}')
                     raise QueueClosed()
@@ -99,7 +133,8 @@ class DownloadQueue:
                     continue  # Retry from queue
 
                 self.requests.task_done()
-                return piece
+                if self.checker.is_piece_downloadable(piece_index=piece.index):
+                    return piece
 
         except asyncio.CancelledError:
             self.logger.info(f'DownloadQueue - pop cancelled for peer {self.ip}:{self.port}')

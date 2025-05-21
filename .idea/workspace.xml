@@ -7,8 +7,9 @@
     <list default="true" id="d4398857-e4c4-4827-8b17-77328c55dc0f" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/_DownloadManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_DownloadManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/_FileManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_FileManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/_PeerGetter.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_PeerGetter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_DownloadQueue.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_DownloadQueue.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_Peer.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Peer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_PeerConnectionPool.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_PeerConnectionPool.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -60,7 +61,9 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="E:\Projects\bittorent\pythonProject1\outputs" />
       <recent name="E:\Projects\bittorent\pythonProject1" />
+      <recent name="E:\Projects\bittorent\pythonProject1\First sucess" />
       <recent name="E:\Projects\bittorent\pythonProject1\utils" />
     </key>
   </component>

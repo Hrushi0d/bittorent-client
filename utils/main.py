@@ -29,6 +29,21 @@ selected_mode = mode[0]  # Change index to select other modes
 logger = logging.getLogger(__name__)
 
 
+async def progress_reporter(download_manager, interval=1.0):
+    while True:
+        try:
+            report = download_manager.checker.progress_report()
+            print(
+                f"[Progress] {report['completed_pieces']}/{report['total_pieces']} "
+                f"({report['fraction_done'] * 100:.1f}%) - "
+                f"Elapsed: {report['time_elapsed_seconds']:.1f}s"
+            )
+            await asyncio.sleep(interval)
+        except Exception as e:
+            # Optionally log error, then break or keep going
+            break
+
+
 async def async_main():
     try:
         logger.info("Main - Starting PeerGetter BitTorrent client...")
@@ -39,7 +54,7 @@ async def async_main():
             torrent, decode_time = None, None
             try:
                 t0 = time.time()
-                with open('../[Kyockcho] [Completed] Maid Education Fallen Aristocrat (English).torrent', 'rb') as f:
+                with open('../Factorio [FitGirl Repack].torrent', 'rb') as f:
                     meta_info = f.read()
                     torrent = Decoder(meta_info).decode()
                 decode_time = time.time() - t0
@@ -95,7 +110,7 @@ async def async_main():
 
         # === Step 4: Initialize Managers ===
         async_queue = AsyncQueue(logger=logger)
-        file_manager = FileManager(torrent=torrent, logger=logger, async_queue=async_queue, download_dir='../')
+        file_manager = FileManager(torrent=torrent, logger=logger, async_queue=async_queue, download_dir='../outputs/')
 
         with yaspin(Spinners.line, text="Initializing download manager...") as spinner:
             try:
@@ -124,7 +139,9 @@ async def async_main():
                 downloader = asyncio.create_task(download_manager.start())
                 writer = asyncio.create_task(file_manager.start_writer())
 
+                progress_task = asyncio.create_task(progress_reporter(download_manager))
                 await asyncio.gather(downloader, writer)
+                progress_task.cancel()
 
                 elapsed = time.time() - t0
                 spinner.ok("✔")
