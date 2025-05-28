@@ -2,11 +2,9 @@ import asyncio
 import logging
 import random
 import time
+from typing import Tuple
 
 from utils._Piece import Piece
-
-import time
-from typing import Dict, Set, List, Tuple, Optional
 
 
 class DownloadChecker:
@@ -143,3 +141,31 @@ class DownloadQueue:
         except asyncio.CancelledError:
             self.logger.info(f'DownloadQueue - pop cancelled for peer {self.ip}:{self.port}')
             raise
+
+
+class BlockQueue:
+    def __init__(self, logger: logging.Logger, ip, port):
+        self.ip, self.port = ip, port
+        self.requests = asyncio.Queue()
+        self.logger = logger
+        self._closed = False  # Indicates no more pushes will happen
+        self.retry_queue = asyncio.PriorityQueue()
+        self.checker: DownloadChecker | None = None
+
+    async def retry_handler(self, push_limit=10, delay=1.0):
+        while True:
+            if self.checker.finished:
+                break
+            push_size = min(push_limit, self.retry_queue.qsize())
+            await self._push_many(push_size)
+            await asyncio.sleep(delay=delay)
+
+    async def _push_many(self, limit):
+        async def move():
+            block = await self.retry_queue.get()
+            await self.requests.put(block)
+
+        await asyncio.gather(*(asyncio.create_task(move()) for _ in range(limit)))
+
+    async def push(self, block):
+        await self.requests.put(block)

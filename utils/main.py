@@ -67,7 +67,7 @@ async def async_main():
             torrent, decode_time = None, None
             try:
                 t0 = time.time()
-                with open('[Kyockcho] [Completed] Maid Education Fallen Aristocrat (English).torrent', 'rb') as f:
+                with open('', 'rb') as f:
                     meta_info = f.read()
                     torrent = Decoder(meta_info).decode()
                 decode_time = time.time() - t0

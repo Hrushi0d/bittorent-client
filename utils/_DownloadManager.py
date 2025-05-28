@@ -91,3 +91,13 @@ class DownloadManager:
                 task.cancel()
         await asyncio.gather(*self._peer_tasks, return_exceptions=True)
         self.logger.info('DownloadManager - stopped.')
+
+
+
+    # async def setup_requests_2(self):
+    #     for rank in range(len(self.pieces_order)):
+    #         piece = self.pieces_order[rank]
+    #         peers = self.piece_dict[piece.index]
+    #         for peer in peers:
+    #             await peer.download_queue.push(block, rank)
+    #             self.active_peers.add(peer)

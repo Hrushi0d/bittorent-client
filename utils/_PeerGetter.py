@@ -1,13 +1,12 @@
 import asyncio
 import hashlib
+import ipaddress
 import logging
-import os
 import random
 import string
 import struct
 import time
 import urllib.parse
-from datetime import datetime
 
 import aiohttp
 import urllib3
@@ -16,8 +15,6 @@ from utils._Bencode import Encoder, Decoder
 from utils._DHTClient import _DHTClient
 from utils._RedisClient import RedisClient
 from utils._TrackerCache import TrackerCache
-
-import ipaddress
 
 
 def is_valid_peer(ip, port: int) -> bool:

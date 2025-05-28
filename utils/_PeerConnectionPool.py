@@ -137,7 +137,7 @@ class PeerConnectionPool:
     async def _get_bitfield_with_timeout(self, peer, piece_dict):
         """Get the bitfield from the peer using its event-driven interface."""
         try:
-            bitfield = await peer.wait_for_bitfield(timeout=5)
+            bitfield = await peer.wait_for_bitfield(timeout=10)
             if bitfield is None:
                 self.logger.warning(f"PeerConnectionPool - Timeout waiting for bitfield from {peer.ip}:{peer.port}")
                 return False
@@ -419,7 +419,7 @@ class PeerConnectionPool:
         try:
             return await asyncio.wait_for(
                 self._process_peer_requests(peer, piece_indices),
-                timeout=5
+                timeout=10
             )
         except asyncio.TimeoutError:
             self.logger.error(f"PeerConnectionPool - Timeout processing pipelined requests for {peer.ip}:{peer.port}")

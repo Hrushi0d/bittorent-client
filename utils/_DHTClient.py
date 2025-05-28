@@ -26,7 +26,7 @@ class _DHTClient:
         ("107.22.210.36", 6881),  # router.bittorrent.org
     ]
 
-    def __init__(self, info_hash, logger: logging.Logger, node_id=None, max_nodes_per_request=8, socket_timeout=5):
+    def __init__(self, info_hash, logger: logging.Logger, node_id=None, max_nodes_per_request=16, socket_timeout=5):
         self.info_hash = info_hash
         self.logger = logger
         self.node_id = node_id or self._generate_node_id()
@@ -259,7 +259,7 @@ class _DHTClient:
         prioritized_nodes.sort(key=lambda x: x[0])
         return [node for _, node in prioritized_nodes[:max_nodes]]
 
-    async def peers_from_DHT(self, max_peers=50, max_queries=100):
+    async def peers_from_DHT(self, max_peers=200, max_queries=400):
         """Find peers using the DHT network"""
         self.logger.info(f"DHTClient - Starting DHT peer discovery for info_hash {self.info_hash.hex()}")
         queries_performed = 0
@@ -281,17 +281,17 @@ class _DHTClient:
             # Dynamic delay based on how many peers we've found
             if len(self.found_peers) > max_peers // 2:
                 # We're finding peers well, can slow down a bit
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(0.05)
             else:
                 # Still need more peers, query more aggressively
-                await asyncio.sleep(0.05)
+                await asyncio.sleep(0.01)
 
             # Check if we're taking too long
             elapsed = time.time() - start_time
-            if elapsed > 30 and len(self.found_peers) > 0:
+            if elapsed > 60 and len(self.found_peers) > 0:
                 self.logger.info(
                     f"DHTClient - DHT search taking too long ({elapsed:.1f}s), returning with {len(self.found_peers)} peers")
                 break
 
         self.logger.info(f"DHTClient - DHT search complete. Found {len(self.found_peers)} peers in {queries_performed} queries")
-        return list(self.found_peers)[:max_peers]  # Return only up to max_peers
+        return list(self.found_peers)  # Return only up to max_peers
