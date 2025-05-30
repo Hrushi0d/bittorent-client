@@ -1,10 +1,30 @@
+# *****************************************************************************************************************************************
+# 							    _________  ________  ________  ________  _______   ________   _________
+# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#
+#                                                             INFO ABOUT THIS FILE
+#                                           Asyncio.Queue based queue that handles storing pieces
+#                                           before utils._FileManager can write it to output files.
+#                                           only utils._DownloadManager async loop can push to this
+#                                           queue [See utils._Peer] only file manager can pull from
+#                                           this queue. simple Producer-Consumer architecture.
+#
+# *************************************************************** IMPORTS *****************************************************************
+
 import asyncio
 import logging
-from typing import Dict, Optional, List, Set, Any
 from dataclasses import dataclass, field
+from typing import Dict, Optional, List, Set
 
 from utils._Piece import Piece
 
+
+# *************************************************************** PIECE_INFO *****************************************************************
 
 @dataclass
 class _PieceInfo:
@@ -13,6 +33,7 @@ class _PieceInfo:
     hash_value: bytes
     timestamp: float = field(default_factory=lambda: asyncio.get_running_loop().time())
 
+# *************************************************************** ASYNCQUEUE *****************************************************************
 
 class AsyncQueue:
     """
@@ -125,3 +146,4 @@ class AsyncQueue:
 
     def is_closed(self) -> bool:
         return self._closed
+# *************************************************************** EOF *****************************************************************

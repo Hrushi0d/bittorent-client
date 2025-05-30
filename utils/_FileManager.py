@@ -1,8 +1,44 @@
+# *****************************************************************************************************************************************
+# 							    _________  ________  ________  ________  _______   ________   _________
+# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#
+#                                                             INFO ABOUT THIS FILE
+#                                           `FileManager` class, a core component for handling disk I/O in
+#                                           the BitTorrent client. Its main responsibility is to manage
+#                                           the mapping and writing of downloaded pieces from the async
+#                                           queue to the correct file(s) on disk, supporting both
+#                                           single-file and multi-file torrents. This module is
+#                                           designed to be used within a BitTorrent client as the
+#                                           disk backend for downloaded data. It works in conjunction
+#                                           with utils._AsyncQueue.
+#
+#                                           - Parses the torrent's info dictionary to establish mappings
+#                                             between piece data offsets and file paths, correctly
+#                                             handling both single-file and multi-file torrent structures.
+#
+#                                           - Maintains a sorted interval list for fast lookup of which
+#                                             file a given piece or byte offset belongs to, ensuring
+#                                             efficient multi-file writes.
+#
+#                                           - Uses asynchronous I/O (`aiofiles`) to concurrently write
+#                                             downloaded pieces to disk, maximizing throughput and
+#                                             minimizing blocking.
+#
+# *************************************************************** IMPORTS *****************************************************************
+
 import logging
 from pathlib import Path
 import aiofiles
 
 from utils._AsyncQueue import AsyncQueue
+
+
+# *************************************************************** FILE MANAGER *****************************************************************
 
 class FileManager:
     def __init__(self, async_queue: AsyncQueue, logger: logging.Logger, torrent, download_dir: str):
@@ -111,4 +147,6 @@ class FileManager:
     async def stop(self):
         """Signal the writer to exit by pushing a None to the async_queue."""
         self._stopped = True
-        await self.async_queue.push(None, None)
+        await self.async_queue.push(None, None)  # sentinel
+
+# *************************************************************** EOF *****************************************************************

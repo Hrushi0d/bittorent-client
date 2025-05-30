@@ -1,4 +1,21 @@
-import json
+# **********************************************************************************************************************
+# 							    _________  ________  ________  ________  _______   ________   _________
+# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#
+#                                                             INFO ABOUT THIS FILE
+#                                           `TrackerCache` class, which provides a Redis-backed cache for
+#                                           storing and retrieving peer lists associated with specific
+#                                           BitTorrent info_hashes. By caching tracker responses, the
+#                                           client can avoid redundant network requests and speed up
+#                                           peer discovery.
+#
+# ******************************************************** IMPORTS *****************************************************
+
 import logging
 
 from utils._Bencode import Encoder, Decoder
@@ -8,6 +25,8 @@ from utils._RedisClient import RedisClient
 def _generate_cache_key(info_hash):
     """ Generate a unique cache key based on the info_hash. """
     return f"tracker_cache:{info_hash.hex()}"
+
+# ***************************************************** TRACKER CACHE **************************************************
 
 
 class TrackerCache:
@@ -55,3 +74,4 @@ class TrackerCache:
         cache_key = _generate_cache_key(info_hash)
         self.redis_client.delete_cache(cache_key)
         logging.info(f"Deleted cached peers for info_hash: {info_hash.hex()}")
+# ********************************************************** EOF *******************************************************

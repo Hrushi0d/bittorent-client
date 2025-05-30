@@ -5,14 +5,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d4398857-e4c4-4827-8b17-77328c55dc0f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/pythonProject1.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/pythonProject1.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_AsyncQueue.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_AsyncQueue.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_Bencode.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Bencode.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/_DHTClient.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_DHTClient.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/_DownloadManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_DownloadManager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/_DownloadQueue.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_DownloadQueue.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_FileManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_FileManager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_Node.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Node.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_Peer.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Peer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/_PeerConnectionPool.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_PeerConnectionPool.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/_PeerGetter.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_PeerGetter.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/_Piece.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Piece.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_Piece_Manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_Piece_Manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_RedisClient.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_RedisClient.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_RoutingTable.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_RoutingTable.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_TrackerCache.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_TrackerCache.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/grapher.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -30,6 +39,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Hrushi0d&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Hrushi0d/bittorent-client.git&quot;,
+    &quot;accountId&quot;: &quot;c487e1ce-e751-4bbf-850e-af7b06713f94&quot;
+  }
+}</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/utils/Peers.py" root0="FORCE_HIGHLIGHTING" />
   </component>
@@ -42,30 +63,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.Peers.executor": "Run",
-    "Python._DownloadManager.executor": "Run",
-    "Python._DownloadQueue.executor": "Run",
-    "Python._FileManager.executor": "Run",
-    "Python._Peer.executor": "Run",
-    "Python._PeerConnectionPool.executor": "Run",
-    "Python._PeerGetter.executor": "Run",
-    "Python._Piece.executor": "Run",
-    "Python._Piece_Manager.executor": "Run",
-    "Python._RedisClient.executor": "Run",
-    "Python.grapher.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.prof.executor": "Run",
-    "Python.reader.executor": "Run",
-    "Python.readerv2.executor": "Run",
-    "Python.test.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/pypy3/pypy3.11-v7.3.19-win64",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.Peers.executor&quot;: &quot;Run&quot;,
+    &quot;Python._DownloadManager.executor&quot;: &quot;Run&quot;,
+    &quot;Python._DownloadQueue.executor&quot;: &quot;Run&quot;,
+    &quot;Python._FileManager.executor&quot;: &quot;Run&quot;,
+    &quot;Python._Peer.executor&quot;: &quot;Run&quot;,
+    &quot;Python._PeerConnectionPool.executor&quot;: &quot;Run&quot;,
+    &quot;Python._PeerGetter.executor&quot;: &quot;Run&quot;,
+    &quot;Python._Piece.executor&quot;: &quot;Run&quot;,
+    &quot;Python._Piece_Manager.executor&quot;: &quot;Run&quot;,
+    &quot;Python._RedisClient.executor&quot;: &quot;Run&quot;,
+    &quot;Python.grapher.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.prof.executor&quot;: &quot;Run&quot;,
+    &quot;Python.reader.executor&quot;: &quot;Run&quot;,
+    &quot;Python.readerv2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/pypy3/pypy3.11-v7.3.19-win64&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\Projects\bittorent\pythonProject1\outputs" />
@@ -188,6 +210,15 @@
       <option name="presentableId" value="Default" />
       <updated>1744469083135</updated>
     </task>
+    <task id="LOCAL-00001" summary="working good, only need to remake all of download mananger and peer to work with block queue instead of peice queue">
+      <option name="closed" value="true" />
+      <created>1748440160609</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1748440160609</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -200,5 +231,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="working good, only need to remake all of download mananger and peer to work with block queue instead of peice queue" />
+    <option name="LAST_COMMIT_MESSAGE" value="working good, only need to remake all of download mananger and peer to work with block queue instead of peice queue" />
   </component>
 </project>

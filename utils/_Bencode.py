@@ -1,3 +1,17 @@
+# *****************************************************************************************************************************************
+# 							    _________  ________  ________  ________  _______   ________   _________
+# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#
+#                                                             INFO ABOUT THIS FILE
+#                                           this a simple python based recursive BEncoder and BDecoder.
+#
+# *************************************************************** IMPORTS *****************************************************************
+
 from collections import OrderedDict
 import time
 
@@ -7,6 +21,7 @@ DICT_TOKEN = b'd'
 END_TOKEN = b'e'
 SEPARATOR_TOKEN = b':'
 
+# *************************************************************** DECODER *****************************************************************
 
 class Decoder:
     """
@@ -62,14 +77,13 @@ class Decoder:
 
     def _decode_list(self):
         results = []
-        # recursively call decode to add elements to results
         while self._peek() != END_TOKEN:
             results.append(self.decode())
         self._consume()
         return results
 
     def _decode_dict(self):
-        results = OrderedDict()
+        results = OrderedDict() # bittorent needs dicts to be lexicographically ordered
         while self._data[self._index: self._index + 1] != END_TOKEN:
             key = self.decode()
             obj = self.decode()
@@ -103,6 +117,7 @@ class Decoder:
             raise RuntimeError('Invalid token read at {0}'.format(
                 str(self._index)))
 
+# *************************************************************** ENCODER *****************************************************************
 
 class Encoder:
     """
@@ -143,6 +158,7 @@ class Encoder:
         else:
             raise TypeError(f"Unsupported type: {type(data)}")
 
+# *************************************************************** PRINTER *****************************************************************
 
 def _format_bytes(size):
     """Convert bytes to a human-readable format."""
@@ -199,3 +215,4 @@ def print_torrent(data, indent=0, max_string_length=80, max_pieces_display=20):
         print(f"{indent_str}{data}")
 
 
+# *************************************************************** EOF *****************************************************************

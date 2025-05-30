@@ -1,3 +1,31 @@
+# **********************************************************************************************************************
+# 							    _________  ________  ________  ________  _______   ________   _________
+# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#
+#                                                             INFO ABOUT THIS FILE
+#                                           `PeerGetter` class, responsible for robust peer discovery
+#                                           in a BitTorrent client. It enables the collection of peer
+#                                           addresses from various sources: HTTP/HTTPS trackers, UDP
+#                                           trackers, and the Distributed Hash Table (DHT), with
+#                                           support for peer caching and tracker augmentation.
+#
+#                                           It first checks with the redis cache, if its online and
+#                                           has cached peers, and uses them else it retrieves peers
+#                                           from the trackers given in announce and announce-list
+#                                           sections of the .torrent file. it then identifies the
+#                                           type of tracker and uses HTTP, HTTPS, or UDP to return
+#                                           the peers, parse them into a list of peers and return
+#                                           said list, if the .torrent file has no announce or
+#                                           announce-list section it uses DHT client to retrieve
+#                                           peers [See, utils._DHTClient]
+#
+# ******************************************************** IMPORTS *****************************************************
+
 import asyncio
 import hashlib
 import ipaddress
@@ -5,7 +33,6 @@ import logging
 import random
 import string
 import struct
-import time
 import urllib.parse
 
 import aiohttp
@@ -16,6 +43,8 @@ from utils._DHTClient import _DHTClient
 from utils._RedisClient import RedisClient
 from utils._TrackerCache import TrackerCache
 
+
+# ****************************************************** FUNCTIONS *****************************************************
 
 def is_valid_peer(ip, port: int) -> bool:
     """
@@ -52,6 +81,8 @@ def load_extra_trackers(file_path="extra_trackers.txt"):
             return [line.strip() for line in f if line.strip() and not line.startswith("#")]
     except FileNotFoundError:
         return []
+
+# ****************************************************** PEER GETTER ***************************************************
 
 
 class PeerGetter:
@@ -103,7 +134,7 @@ class PeerGetter:
         for i in range(0, len(peers_data), 6):
             ip = '.'.join(str(b) for b in peers_data[i:i + 4])
             port = int.from_bytes(peers_data[i + 4:i + 6], 'big')
-            if is_valid_peer(ip,port):
+            if is_valid_peer(ip, port):
                 peers.append((ip, port))
                 self.peer_set.add((ip, port))
 
@@ -120,7 +151,7 @@ class PeerGetter:
         for peer in peer_list:
             ip = peer.get(b'ip')
             port = peer.get(b'port')
-            if ip and port and is_valid_peer(ip,port):
+            if ip and port and is_valid_peer(ip, port):
                 peers.append((ip, port))
                 self.peer_set.add((ip, port))
             else:
@@ -304,35 +335,4 @@ class PeerGetter:
         await self.cache.cache_peers(self.info_hash, self.peers)
         return self.peers
 
-
-if __name__ == '__main__':
-    try:
-        # Start the timer
-        start_time = time.time()
-
-        with open('../Factorio [FitGirl Repack].torrent', 'rb') as f:
-            meta_info = f.read()
-            torrent = Decoder(meta_info).decode()
-            # info_dict = torrent[b'info']
-            # bencoded_info = Encoder(info_dict).encode()
-            # info_hash = hashlib.sha1(bencoded_info).digest()
-
-            # print_torrent(torrent)
-
-            peergetter = PeerGetter(torrent=torrent, logger=logging.getLogger())
-
-            # Run peer discovery asynchronously
-            asyncio.run(peergetter.get())
-
-            # Calculate the elapsed time
-            elapsed_time = time.time() - start_time
-
-            # Log the peers and the time taken
-            logging.info("Peers: %s", peergetter.peers)
-            print("Peers: ", peergetter.peers)
-            logging.info(f"PeerGetter - Peer discovery took {elapsed_time:.2f} seconds.")
-            print(f"Peer discovery took {elapsed_time:.2f} seconds.")
-
-    except Exception as e:
-        logging.exception("An error occurred during peer discovery.")
-        print(f"An error occurred: {e}")
+# ********************************************************** EOF *******************************************************

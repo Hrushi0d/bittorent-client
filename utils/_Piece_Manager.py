@@ -1,18 +1,54 @@
-import asyncio
+# **********************************************************************************************************************
+# 							    _________  ________  ________  ________  _______   ________   _________
+# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#
+#                                                             INFO ABOUT THIS FILE
+#                                           `PieceManager` class, which encapsulates the logic for
+#                                           selecting and managing pieces to download in a BitTorrent
+#                                           client. It supports multiple piece selection strategies
+#                                           to optimize the download process based on piece rarity
+#                                           and availability.
+#
+#                                            - Sequential : Downloads pieces in order from first to last.
+#
+#                                            - Rarest-First: Prioritizes pieces that are available
+#                                              from the fewest peers, helping ensure rare pieces
+#                                              are acquired before they disappear from the swarm.
+#
+#                                            - Random Rarest-First: Randomizes the order among
+#                                              pieces of equal rarity for improved swarm health
+#                                              and parallelism.
+#
+# ******************************************************** IMPORTS *****************************************************
+
 import logging
 import pickle
 import random
 from collections import defaultdict
-from tqdm import tqdm
 
-from utils._Bencode import Decoder
 from utils._Piece import Piece
+
+
+# ******************************************************** FUNCTIONS ***************************************************
 
 
 def _get_last_piece_length(files, piece_length):
     total_length = sum(file[b'length'] for file in files)
     return total_length % piece_length
 
+
+def load_piece_dict(pickle_path="pieces.pkl"):
+    with open(pickle_path, "rb") as f:
+        piece_dict = pickle.load(f)
+    return piece_dict
+
+
+# ***************************************************** PIECE MANAGER **************************************************
 
 class PieceManager:
     def __init__(self, piece_dict: defaultdict[list], torrent, mode, logger: logging.Logger):
@@ -107,30 +143,4 @@ class PieceManager:
         self.logger.info(f"PieceManager - Completed piece selection for mode: {self.mode}.")
         return pieces
 
-
-def load_piece_dict(pickle_path="pieces.pkl"):
-    with open(pickle_path, "rb") as f:
-        piece_dict = pickle.load(f)
-    return piece_dict
-
-
-async def main():
-    with open('../Factorio [FitGirl Repack].torrent', 'rb') as f:
-        meta_info = f.read()
-        torrent = Decoder(meta_info).decode()
-        piece_dict = load_piece_dict()
-        for key, value in piece_dict.items():
-            print(f"Key type: {type(key)}, Value type: {type(value[0])},{value[0]}")
-            break  # Remove this if you want to inspect all entries
-        manager = PieceManager(piece_dict, torrent, 'random-rarest-first', logger=logging.getLogger())
-    # results = await manager.run()
-
-    # total_pieces = len(piece_dict)
-    # print(f"\nDownloaded pieces: {len(manager.pieces_done)}/{total_pieces}")
-    # total_peers = {peer for peers in piece_dict.values() for peer in peers}
-    # percent_peers_used = 100 * len(manager.peers_used) / len(total_peers)
-    # print(f"Percentage of peers used: {percent_peers_used:.2f}%")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# ********************************************************** EOF *******************************************************

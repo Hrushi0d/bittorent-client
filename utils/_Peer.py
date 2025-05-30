@@ -1,3 +1,37 @@
+# *****************************************************************************************************************************************
+# 							    _________  ________  ________  ________  _______   ________   _________
+# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#
+#                                                             INFO ABOUT THIS FILE
+#                                          `Peer` class, representing a single peer connection in the client.
+#                                          The class manages the entire lifecycle of a peer connection,
+#                                          from connecting and handshaking to downloading pieces using
+#                                          the BitTorrent protocol over an asynchronous TCP stream.
+#
+#                                          utils._PeerConnectionPool will initialize A Peer instance
+#                                          per (ip,port) pair after getting list of peers from
+#                                          utils._PeerGetter. then it will make all the Peers
+#                                          retrieve piece information and possession information
+#                                          for all peers using the bitfield.
+#
+#                                          utils._DownloadManager sets up piece requests for all
+#                                          valid peers according to strategic order decided by
+#                                          utils._PieceManager. utils._DownloadManager starts
+#                                          the download loop in each peer and the retry loop as
+#                                          well as add the common utils._DownloadChecker instance
+#                                          initialized in utils._DownloadManager to keep track
+#                                          of the pieces which are passed to requests queue as well.
+#
+#                                          it uses retry queue and retry handler to bulk push
+#                                          retry requests into the requests queue.
+#
+# *************************************************************** IMPORTS *****************************************************************
+
 import asyncio
 import hashlib
 import logging
@@ -7,15 +41,22 @@ from asyncio import StreamReader, StreamWriter
 
 from utils._DownloadQueue import DownloadQueue
 
+
+# *************************************************************** FUNCTIONS *****************************************************************
+
+
 def _create_request_message(block_length, block_offset, piece_index):
     message_id = 6
     payload = struct.pack("!III", piece_index, block_offset, block_length)
     message_length = 1 + len(payload)
     return struct.pack("!IB", message_length, message_id) + payload
 
+
 def verify_piece_hash(piece_data, expected_hash):
     piece_hash = hashlib.sha1(piece_data).digest()
     return piece_hash == expected_hash
+
+# *************************************************************** PEER *****************************************************************
 
 class Peer:
     CHOKE = 0
@@ -76,11 +117,11 @@ class Peer:
                 raise ConnectionError("Peer - Cannot handshake, connection not established")
             pstr = b"BitTorrent protocol"
             handshake = (
-                bytes([len(pstr)]) +
-                pstr +
-                b"\x00" * 8 +
-                self.info_hash +
-                self.peer_id
+                    bytes([len(pstr)]) +
+                    pstr +
+                    b"\x00" * 8 +
+                    self.info_hash +
+                    self.peer_id
             )
             self.writer.write(handshake)
             await self.writer.drain()
@@ -161,7 +202,8 @@ class Peer:
                         self.logger.info(f"Peer - Peer {self.ip}:{self.port} unchoked us.")
                         return True
                     elif msg_id in [b'\x04', b'\x05', b'\x06']:
-                        self.logger.debug(f"Peer - Got {msg_id.hex()} from {self.ip}:{self.port}, still waiting for UNCHOKE.")
+                        self.logger.debug(
+                            f"Peer - Got {msg_id.hex()} from {self.ip}:{self.port}, still waiting for UNCHOKE.")
                     else:
                         self.logger.debug(f"Peer - Ignored msg {msg_id.hex()} from {self.ip}:{self.port}")
 
@@ -339,7 +381,7 @@ class Peer:
                         async def fetch_block(block_idx, o, bsize):
                             try:
                                 block = await self.request_block(piece_index, o, bsize)
-                                return (block_idx, block)
+                                return block_idx, block
                             except Exception as e:
                                 self.logger.warning(
                                     f"Peer - Failed to fetch block {block_idx} of piece {piece_index}: {e}"
@@ -412,3 +454,5 @@ class Peer:
         except Exception as e:
             self.logger.error(f"Peer - Error waiting for bitfield from {self.ip}:{self.port}: {e}")
             return None
+
+# *************************************************************** EOF *****************************************************************

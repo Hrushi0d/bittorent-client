@@ -1,3 +1,23 @@
+# *****************************************************************************************************************************************
+# 							    _________  ________  ________  ________  _______   ________   _________
+# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#
+#                                                             INFO ABOUT THIS FILE
+#                                           implements the `DownloadManager` class responsible for orchestrating
+#                                           the parallel downloading of pieces from peers in a BitTorrent client.
+#                                           It efficiently manages piece and block-level concurrency, assigns
+#                                           download tasks to peers, and tracks download progress to maximize
+#                                           throughput and reliability.Controls overall concurrency with semaphores
+#                                           for both pieces and blocks, allowing configurable limits for maximum
+#                                           parallel downloads.
+#
+# *************************************************************** IMPORTS *****************************************************************
+
 import asyncio
 import logging
 from collections import defaultdict
@@ -7,6 +27,7 @@ from utils._DownloadQueue import QueueClosed, DownloadChecker
 from utils._Peer import Peer
 from utils._Piece import Piece
 
+# ********************************************************** DOWNLOAD MANAGER *****************************************************************
 
 class DownloadManager:
     def __init__(self, logger: logging.Logger, async_queue: AsyncQueue, pieces: list[Piece],
@@ -18,7 +39,7 @@ class DownloadManager:
         self.piece_dict = piece_dict
         self.peer_dict = defaultdict(list)
         for piece in self.pieces_order:
-            peers = self.piece_dict[piece.index]  # use piece.index instead of piece directly
+            peers = self.piece_dict[piece.index]
             for peer in peers:
                 self.peer_dict[(peer.ip, peer.port)].append(piece.index)
 
@@ -44,9 +65,6 @@ class DownloadManager:
     async def create(cls, logger: logging.Logger, async_queue: AsyncQueue, pieces: list[Piece],
                      piece_dict: defaultdict[int, list[Peer]],
                      max_concurrent_pieces=5, max_concurrent_blocks=20):
-        """
-        Asynchronously creates and initializes a DownloadManager.
-        """
         manager = cls(logger, async_queue, pieces, piece_dict, max_concurrent_pieces, max_concurrent_blocks)
         await manager.setup_requests()
         return manager
@@ -91,13 +109,3 @@ class DownloadManager:
                 task.cancel()
         await asyncio.gather(*self._peer_tasks, return_exceptions=True)
         self.logger.info('DownloadManager - stopped.')
-
-
-
-    # async def setup_requests_2(self):
-    #     for rank in range(len(self.pieces_order)):
-    #         piece = self.pieces_order[rank]
-    #         peers = self.piece_dict[piece.index]
-    #         for peer in peers:
-    #             await peer.download_queue.push(block, rank)
-    #             self.active_peers.add(peer)

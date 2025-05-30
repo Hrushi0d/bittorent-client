@@ -1,8 +1,24 @@
-import asyncio
+# **********************************************************************************************************************
+# 							    _________  ________  ________  ________  _______   ________   _________
+# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#
+#                                                             INFO ABOUT THIS FILE
+#                                           `RedisClient` class, which provides an asynchronous
+#                                           interface to a Redis database for use as a cache
+#
+# ******************************************************** IMPORTS *****************************************************
 
-import redis.asyncio as aioredis
 import logging
 
+import redis.asyncio as aioredis
+
+
+# ***************************************************** REDIS CLIENT **************************************************
 
 class RedisClient:
     def __init__(self, host='localhost', port=6379, db=0, ttl=3600):
@@ -46,8 +62,4 @@ class RedisClient:
             logging.info("RedisClient - All caches cleared.")
         except Exception as e:
             logging.error(f"RedisClient - Error clearing all caches: {e}")
-
-
-if __name__ == '__main__':
-    redis = RedisClient()
-    asyncio.run(redis.clear_all())
+# ********************************************************** EOF *******************************************************

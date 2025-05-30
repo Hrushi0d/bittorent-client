@@ -1,3 +1,33 @@
+# **********************************************************************************************************************
+# 							    _________  ________  ________  ________  _______   ________   _________
+# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#
+#                                                             INFO ABOUT THIS FILE
+#                                           `PeerConnectionPool` class, handles maintaining a pool of active peers,
+#                                           gets and organises piece information into piece_dict with key as
+#                                           piece_index and value as list of peers that have that piece available,
+#                                           this is used later inside utils._PieceManager to sort peices into
+#                                           strategic order.
+#
+#                                            - First it acquires peers from the torrent using a petter getter
+#                                              instance defined in utils._PeerGetter.
+#
+#                                            - Then, sets up interested and bitfeild requests for each peer
+#                                              as an Asyncio Coroutine. using the member functions
+#                                              _handle_peer_with_timeout() and _handle_peer(), then it attempts
+#                                              retries with exponential backoff on all peer requests just in case.
+#
+#                                            - Checks to see if there are any missing peices, stopping execution
+#                                              if no pieces are available. it logs peer scores. then it returns
+#                                              the piece_dict.
+#
+# *************************************************************** IMPORTS **********************************************
+
 import asyncio
 import hashlib
 import logging
@@ -10,6 +40,7 @@ from utils._Bencode import Encoder
 from utils._Peer import Peer
 from utils._PeerGetter import PeerGetter
 
+# ********************************************************* PEER CONNECTION POOL ***************************************
 
 class PeerConnectionPool:
     def __init__(self, torrent, logger: logging.Logger):
@@ -164,75 +195,6 @@ class PeerConnectionPool:
         except Exception as e:
             self.logger.error(f"PeerConnectionPool - Error getting bitfield from {peer.ip}:{peer.port}: {e}")
             return False
-
-    # async def get_bitfield(self, peer, piece_dict):
-    #     """Get the bitfield message from a peer and parse it into the piece dictionary"""
-    #     reader = peer.reader
-    #     start_time = time.time()
-    #
-    #     # No need for timeout context here as we're using the wrapper function with wait_for
-    #     try:
-    #         # Wait for the bitfield message (ID = 5)
-    #         while True:
-    #             try:
-    #                 # Read message length (4 bytes)
-    #                 length_bytes = await reader.readexactly(4)
-    #                 length = int.from_bytes(length_bytes, 'big')
-    #
-    #                 if length == 0:
-    #                     continue  # keep-alive message, ignore
-    #
-    #                 # Read message ID (1 byte)
-    #                 msg_id = await reader.readexactly(1)
-    #                 msg_id_int = ord(msg_id)
-    #                 payload_len = length - 1
-    #
-    #                 # Bitfield message (ID = 5)
-    #                 if msg_id_int == 5:
-    #                     self.logger.debug(
-    #                         f"PeerConnectionPool - Received bitfield message from {peer.ip}:{peer.port}, "
-    #                         f"payload length: {payload_len}")
-    #                     payload = await reader.readexactly(payload_len)
-    #
-    #                     # Parse bitfield to determine which pieces the peer has
-    #                     available_pieces = set()
-    #                     for byte_idx, byte in enumerate(payload):
-    #                         for bit_idx in range(8):
-    #                             piece_idx = byte_idx * 8 + bit_idx
-    #
-    #                             # Ensure we don't exceed the total pieces
-    #                             if piece_idx >= self.total_pieces:
-    #                                 break
-    #
-    #                             # Check if bit is set (peer has this piece)
-    #                             if byte & (128 >> bit_idx):
-    #                                 # Add peer to the list of peers that have this piece
-    #                                 piece_dict[piece_idx].append(peer)
-    #                                 available_pieces.add(piece_idx)
-    #
-    #                     # Update peer stats
-    #                     if peer in self.peer_stats:
-    #                         self.peer_stats[peer]['available_pieces'] = available_pieces
-    #                         self.peer_stats[peer]['last_seen'] = time.time()
-    #                         self.peer_stats[peer]['response_time'] = time.time() - start_time
-    #
-    #                     self.logger.info(
-    #                         f"PeerConnectionPool - Peer {peer.ip}:{peer.port} has "
-    #                         f"{len(available_pieces)}/{self.total_pieces} pieces "
-    #                         f"available")
-    #                     return True
-    #
-    #                 # Handle other message types (read and discard)
-    #                 elif payload_len > 0:
-    #                     await reader.readexactly(payload_len)
-    #
-    #             except asyncio.IncompleteReadError:
-    #                 self.logger.error(f"PeerConnectionPool - Incomplete read from {peer.ip}:{peer.port}")
-    #                 return False
-    #
-    #     except Exception as e:
-    #         self.logger.error(f"PeerConnectionPool - Error getting bitfield from {peer.ip}:{peer.port}: {e}")
-    #         return False
 
     async def _handle_peer_with_timeout(self, peer, peer_results, piece_dict, retry_count=0):
         """Handle peer connection with timeout wrapper"""
@@ -391,77 +353,6 @@ class PeerConnectionPool:
         if retry_tasks:
             await asyncio.gather(*retry_tasks, return_exceptions=True)
 
-    async def _process_pipeline_requests(self):
-        """Process queued pipeline requests"""
-        if not self.request_queue:
-            return
-
-        self.logger.info(f"PeerConnectionPool - Processing {len(self.request_queue)} pipelined requests")
-
-        # Group requests by peer for efficient processing
-        requests_by_peer = defaultdict(list)
-        while self.request_queue:
-            peer, piece_idx = self.request_queue.popleft()
-            if peer in self.active_peers:
-                requests_by_peer[peer].append(piece_idx)
-
-        # Process each peer's requests
-        peer_tasks = []
-        for peer, pieces in requests_by_peer.items():
-            task = asyncio.create_task(self._process_peer_requests_with_timeout(peer, pieces))
-            peer_tasks.append(task)
-
-        if peer_tasks:
-            await asyncio.gather(*peer_tasks, return_exceptions=True)
-
-    async def _process_peer_requests_with_timeout(self, peer, piece_indices):
-        """Process peer requests with timeout wrapper"""
-        try:
-            return await asyncio.wait_for(
-                self._process_peer_requests(peer, piece_indices),
-                timeout=10
-            )
-        except asyncio.TimeoutError:
-            self.logger.error(f"PeerConnectionPool - Timeout processing pipelined requests for {peer.ip}:{peer.port}")
-            return False
-
-    async def _process_peer_requests(self, peer, piece_indices):
-        """Process multiple piece requests for a single peer with pipelining"""
-        if not piece_indices:
-            return
-
-        self.logger.debug(
-            f"PeerConnectionPool - Processing {len(piece_indices)} pipelined requests for {peer.ip}:{peer.port}")
-
-        try:
-
-            # Send requests in a pipeline (without waiting for responses)
-            for piece_idx in piece_indices:
-                # In a real implementation, you would send actual piece request messages here
-                # For this example, we'll just log that we're sending the request
-                self.logger.debug(
-                    f"PeerConnectionPool - Sending pipelined request for piece {piece_idx} to {peer.ip}:{peer.port}")
-
-                # Simulate sending request (in real code, you'd actually send BitTorrent request message)
-                # Example of what to send (not actually sending in this demo):
-                # request_msg = struct.pack(">IBIII", 13, 6, piece_idx, 0, 16384)
-                # writer.write(request_msg)
-
-                # We'll simulate a small delay between requests
-                await asyncio.sleep(0.01)
-
-            # In a real implementation, you would then read and process all responses
-            # For this example, we'll just log that we're done
-            self.logger.debug(
-                f"PeerConnectionPool - Completed sending {len(piece_indices)} requests to {peer.ip}:{peer.port}")
-
-        except Exception as e:
-            self.logger.error(
-                f"PeerConnectionPool - Error processing pipelined requests for {peer.ip}:{peer.port}: {e}")
-            return False
-
-        return True
-
     def _prioritize_peers(self):
         """Sort peers by their score for prioritized processing"""
         # Calculate scores for any peers that don't have one
@@ -511,9 +402,6 @@ class PeerConnectionPool:
         if self.failed_peers:
             await self._retry_failed_peers(peer_results, piece_dict)
 
-        # Process pipelined requests
-        await self._process_pipeline_requests()
-
         # Check for missing pieces
         missing_pieces = []
         for piece in range(self.total_pieces):
@@ -528,30 +416,31 @@ class PeerConnectionPool:
         else:
             self.logger.info(f"PeerConnectionPool - All {self.total_pieces} pieces are available from peers")
 
-        # Log summary
-        successful_peers = sum(1 for result in peer_results.values() if result)
-        success_rate = successful_peers / max(1, len(self.peers)) * 100
-        self.logger.info(
-            f"PeerConnectionPool - Successfully connected to {successful_peers} out of {len(self.peers)} peers "
-            f"({success_rate:.1f}%)")
+        # # Log summary
+        # successful_peers = sum(1 for result in peer_results.values() if result)
+        # success_rate = successful_peers / max(1, len(self.peers)) * 100
+        # self.logger.info(
+        #     f"PeerConnectionPool - Successfully connected to {successful_peers} out of {len(self.peers)} peers "
+        #     f"({success_rate:.1f}%)")
+        #
+        # # Log piece availability summary
+        # pieces_with_peers = sum(1 for piece_id, peers_list in piece_dict.items() if peers_list)
+        # if pieces_with_peers > 0:
+        #     self.logger.info(
+        #         f"PeerConnectionPool - Found {pieces_with_peers} "
+        #         f"pieces available from peers ({pieces_with_peers / self.total_pieces * 100:.1f}% of total)")
+        #
+        #     # Find most and least available pieces
+        #     piece_availability = [(piece_id, len(peers_list)) for piece_id, peers_list in piece_dict.items() if
+        #                           peers_list]
+        #     if piece_availability:
+        #         most_available = max(piece_availability, key=lambda x: x[1])
+        #         least_available = min(piece_availability, key=lambda x: x[1])
+        #         self.logger.info(
+        #             f"PeerConnectionPool - Most available piece: {most_available[0]} ({most_available[1]} peers)")
+        #         self.logger.info(
+        #             f"PeerConnectionPool - Least available piece: {least_available[0]} ({least_available[1]} peers)")
 
-        # Log piece availability summary
-        pieces_with_peers = sum(1 for piece_id, peers_list in piece_dict.items() if peers_list)
-        if pieces_with_peers > 0:
-            self.logger.info(
-                f"PeerConnectionPool - Found {pieces_with_peers} "
-                f"pieces available from peers ({pieces_with_peers / self.total_pieces * 100:.1f}% of total)")
-
-            # Find most and least available pieces
-            piece_availability = [(piece_id, len(peers_list)) for piece_id, peers_list in piece_dict.items() if
-                                  peers_list]
-            if piece_availability:
-                most_available = max(piece_availability, key=lambda x: x[1])
-                least_available = min(piece_availability, key=lambda x: x[1])
-                self.logger.info(
-                    f"PeerConnectionPool - Most available piece: {most_available[0]} ({most_available[1]} peers)")
-                self.logger.info(
-                    f"PeerConnectionPool - Least available piece: {least_available[0]} ({least_available[1]} peers)")
-
-        # Return the piece dictionary - THIS IS CRUCIAL TO MAINTAIN ORIGINAL FUNCTIONALITY
+        # Return the piece dictionary
         return piece_dict
+# *************************************************************** EOF **************************************************
