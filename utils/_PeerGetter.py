@@ -176,9 +176,6 @@ class PeerGetter:
             return []
 
     async def _peers_from_http(self, url):
-        if self.peers_found:
-            return []
-
         parsed = urllib.parse.urlparse(url)
         scheme = parsed.scheme or 'http'
         host = parsed.hostname
@@ -255,10 +252,19 @@ class PeerGetter:
             tid = random.getrandbits(32)
             announce_req = struct.pack(
                 ">QLL20s20sQQQLLLlh",
-                conn_id, 1, tid,
-                self.info_hash, self.peer_id,
-                0, 0, 0, 0, 0,
-                random.getrandbits(32), -1, 6881
+                conn_id,             # 0–7   : connection_id      (uint64)
+                1,                       # 8–11  : action = 1 (announce)
+                tid,                     # 12–15 : transaction_id      (uint32)
+                self.info_hash,          # 16–35 : info_hash (20 bytes)
+                self.peer_id,            # 36–55 : peer_id  (20 bytes)
+                0,                       # 56–63 : downloaded (uint64)
+                0,                       # 64–71 : left       (uint64)
+                0,                       # 72–79 : uploaded   (uint64)
+                0,                       # 80–83 : event = 0 (none)
+                0,                       # 84–87 : IP address = 0 (default)
+                random.getrandbits(32),  # 88–91 : key
+                -1,                      # 92–95 : num_want = -1
+                6881                     # 96–97 : port
             )
             proto.future = loop.create_future()
             proto.transport.sendto(announce_req)
