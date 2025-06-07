@@ -55,7 +55,7 @@ A fully asynchronous BitTorrent client written in Python, featuring robust peer 
 2. **Run the client**  
    Ensure you have a valid `.torrent` file. Example entrypoint:
    ```sh
-   python main.py path/to/file.torrent [download_directory]
+   python cli.py -f path/to/file.torrent -m rarest-first
    ```
 
 3. **Configuration**  
