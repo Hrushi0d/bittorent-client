@@ -1,29 +1,29 @@
 # **********************************************************************************************************************
-# 							    _________  ________  ________  ________  _______   ________   _________
-# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
-# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
-# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
-# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
-# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
-# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#                     _________  ________  ________  ________  _______   ________   _________
+#                    |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+#                    \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+#                         \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+#                          \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+#                           \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+#                            \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
 #
-#                                                             INFO ABOUT THIS FILE
-#                                           `PeerGetter` class, responsible for robust peer discovery
-#                                           in a BitTorrent client. It enables the collection of peer
-#                                           addresses from various sources: HTTP/HTTPS trackers, UDP
-#                                           trackers, and the Distributed Hash Table (DHT), with
-#                                           support for peer caching and tracker augmentation.
+#                                                 INFO ABOUT THIS FILE
+#                               `PeerGetter` class, responsible for robust peer discovery
+#                               in a BitTorrent client. It enables the collection of peer
+#                               addresses from various sources: HTTP/HTTPS trackers, UDP
+#                               trackers, and the Distributed Hash Table (DHT), with
+#                               support for peer caching and tracker augmentation.
 #
-#                                           It first checks with the redis cache, if its online and
-#                                           has cached peers, and uses them else it retrieves peers
-#                                           from the trackers given in announce and announce-list
-#                                           sections of the .torrent file. it then identifies the
-#                                           type of tracker and uses HTTP, HTTPS, or UDP to return
-#                                           the peers, parse them into a list of peers and return
-#                                           said list, if the .torrent file has no announce or
-#                                           announce-list section it uses DHT client to retrieve
-#                                           peers [See, utils._DHTClient]
-#
+#                               It first checks with the redis cache, if its online and
+#                               has cached peers, and uses them else it retrieves peers
+#                               from the trackers given in announce and announce-list
+#                               sections of the .torrent file. it then identifies the
+#                               type of tracker and uses HTTP, HTTPS, or UDP to return
+#                               the peers, parse them into a list of peers and return
+#                               said list, if the .torrent file has no announce or
+#                               announce-list section it uses DHT client to retrieve
+#                               peers [See, utils._DHTClient]
+
 # ******************************************************** IMPORTS *****************************************************
 
 import asyncio

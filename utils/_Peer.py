@@ -1,36 +1,36 @@
-# *****************************************************************************************************************************************
-# 							    _________  ________  ________  ________  _______   ________   _________
-# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
-# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
-# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
-# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
-# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
-# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+# **********************************************************************************************************************
+#                     _________  ________  ________  ________  _______   ________   _________
+#                    |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+#                    \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+#                         \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+#                          \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+#                           \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+#                            \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
 #
-#                                                             INFO ABOUT THIS FILE
-#                                          `Peer` class, representing a single peer connection in the client.
-#                                          The class manages the entire lifecycle of a peer connection,
-#                                          from connecting and handshaking to downloading pieces using
-#                                          the BitTorrent protocol over an asynchronous TCP stream.
+#                                                 INFO ABOUT THIS FILE
+#                              `Peer` class, representing a single peer connection in the client.
+#                              The class manages the entire lifecycle of a peer connection,
+#                              from connecting and handshaking to downloading pieces using
+#                              the BitTorrent protocol over an asynchronous TCP stream.
 #
-#                                          utils._PeerConnectionPool will initialize A Peer instance
-#                                          per (ip,port) pair after getting list of peers from
-#                                          utils._PeerGetter. then it will make all the Peers
-#                                          retrieve piece information and possession information
-#                                          for all peers using the bitfield.
+#                              utils._PeerConnectionPool will initialize A Peer instance
+#                              per (ip,port) pair after getting list of peers from
+#                              utils._PeerGetter. then it will make all the Peers
+#                              retrieve piece information and possession information
+#                              for all peers using the bitfield.
 #
-#                                          utils._DownloadManager sets up piece requests for all
-#                                          valid peers according to strategic order decided by
-#                                          utils._PieceManager. utils._DownloadManager starts
-#                                          the download loop in each peer and the retry loop as
-#                                          well as add the common utils._DownloadChecker instance
-#                                          initialized in utils._DownloadManager to keep track
-#                                          of the pieces which are passed to requests queue as well.
+#                              utils._DownloadManager sets up piece requests for all
+#                              valid peers according to strategic order decided by
+#                              utils._PieceManager. utils._DownloadManager starts
+#                              the download loop in each peer and the retry loop as
+#                              well as add the common utils._DownloadChecker instance
+#                              initialized in utils._DownloadManager to keep track
+#                              of the pieces which are passed to requests queue as well.
 #
-#                                          it uses retry queue and retry handler to bulk push
-#                                          retry requests into the requests queue.
-#
-# *************************************************************** IMPORTS *****************************************************************
+#                              it uses retry queue and retry handler to bulk push
+#                              retry requests into the requests queue.
+
+# ***************************************************** IMPORTS *******************************************************
 
 import asyncio
 import hashlib
@@ -42,7 +42,7 @@ from asyncio import StreamReader, StreamWriter
 from utils._DownloadQueue import DownloadQueue
 
 
-# *************************************************************** FUNCTIONS *****************************************************************
+# **************************************************** FUNCTIONS ******************************************************
 
 
 def _create_request_message(block_length, block_offset, piece_index):
@@ -56,7 +56,7 @@ def verify_piece_hash(piece_data, expected_hash):
     piece_hash = hashlib.sha1(piece_data).digest()
     return piece_hash == expected_hash
 
-# *************************************************************** PEER *****************************************************************
+# ******************************************************* PEER *********************************************************
 
 class Peer:
     CHOKE = 0
@@ -455,4 +455,4 @@ class Peer:
             self.logger.error(f"Peer - Error waiting for bitfield from {self.ip}:{self.port}: {e}")
             return None
 
-# *************************************************************** EOF *****************************************************************
+# ******************************************************* EOF *********************************************************

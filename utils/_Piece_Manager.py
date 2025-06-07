@@ -1,29 +1,29 @@
 # **********************************************************************************************************************
-# 							    _________  ________  ________  ________  _______   ________   _________
-# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
-# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
-# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
-# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
-# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
-# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#                     _________  ________  ________  ________  _______   ________   _________
+#                    |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+#                    \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+#                         \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+#                          \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+#                           \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+#                            \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
 #
-#                                                             INFO ABOUT THIS FILE
-#                                           `PieceManager` class, which encapsulates the logic for
-#                                           selecting and managing pieces to download in a BitTorrent
-#                                           client. It supports multiple piece selection strategies
-#                                           to optimize the download process based on piece rarity
-#                                           and availability.
+#                                                 INFO ABOUT THIS FILE
+#                               `PieceManager` class, which encapsulates the logic for
+#                               selecting and managing pieces to download in a BitTorrent
+#                               client. It supports multiple piece selection strategies
+#                               to optimize the download process based on piece rarity
+#                               and availability.
 #
-#                                            - Sequential : Downloads pieces in order from first to last.
+#                                - Sequential : Downloads pieces in order from first to last.
 #
-#                                            - Rarest-First: Prioritizes pieces that are available
-#                                              from the fewest peers, helping ensure rare pieces
-#                                              are acquired before they disappear from the swarm.
+#                                - Rarest-First: Prioritizes pieces that are available
+#                                  from the fewest peers, helping ensure rare pieces
+#                                  are acquired before they disappear from the swarm.
 #
-#                                            - Random Rarest-First: Randomizes the order among
-#                                              pieces of equal rarity for improved swarm health
-#                                              and parallelism.
-#
+#                                - Random Rarest-First: Randomizes the order among
+#                                  pieces of equal rarity for improved swarm health
+#                                  and parallelism.
+
 # ******************************************************** IMPORTS *****************************************************
 
 import logging

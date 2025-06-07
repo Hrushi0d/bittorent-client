@@ -1,28 +1,28 @@
 # *****************************************************************************************************************************************
-# 							    _________  ________  ________  ________  _______   ________   _________
-# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
-# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
-# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
-# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
-# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
-# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#                     _________  ________  ________  ________  _______   ________   _________
+#                    |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+#                    \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+#                         \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+#                          \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+#                           \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+#                            \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
 #
-#                                                             INFO ABOUT THIS FILE
-#                                           An asynchronous Distributed Hash Table (DHT) client for the
-#                                           BitTorrent protocol, responsible for peer discovery in the
-#                                           BitTorrent network. The `_DHTClient` class manages
-#                                           communication with the DHT network, enabling a BitTorrent
-#                                           client to obtain peers for a specific `info_hash`
-#                                           (corresponding to a torrent).
+#                                                 INFO ABOUT THIS FILE
+#                               An asynchronous Distributed Hash Table (DHT) client for the
+#                               BitTorrent protocol, responsible for peer discovery in the
+#                               BitTorrent network. The `_DHTClient` class manages
+#                               communication with the DHT network, enabling a BitTorrent
+#                               client to obtain peers for a specific `info_hash`
+#                               (corresponding to a torrent).
 #
-#                                           Includes a list of well-known DHT bootstrap nodes to join the
-#                                           network.
+#                               Includes a list of well-known DHT bootstrap nodes to join the
+#                               network.
 #
-#                                           Loads and saves the routing table to disk via pickling for
-#                                           persistent node knowledge across sessions. Uses a custom
-#                                           routing table implementation [See utils._RoutingTable]
-#                                           for efficient node lookup and management.
-# *************************************************************** IMPORTS *****************************************************************
+#                               Loads and saves the routing table to disk via pickling for
+#                               persistent node knowledge across sessions. Uses a custom
+#                               routing table implementation [See utils._RoutingTable]
+#                               for efficient node lookup and management.
+# ***************************************************** IMPORTS *******************************************************
 
 import asyncio
 import datetime
@@ -39,7 +39,7 @@ from utils._Bencode import Encoder, Decoder
 from utils._Node import Node
 from utils._RoutingTable import RoutingTable
 
-# *************************************************************** DHTCLIENT *****************************************************************
+# **************************************************** DHTCLIENT ******************************************************
 
 class _DHTClient:
     BOOTSTRAP_NODES = [
@@ -77,7 +77,8 @@ class _DHTClient:
                 with open(filename, 'rb') as f:
                     routing_table = pickle.load(f)
                     self.logger.info(
-                        f"DHTClient - Loaded routing table with {sum(len(bucket) for bucket in routing_table.buckets)} nodes")
+                        f"DHTClient - Loaded routing table with "
+                        f"{sum(len(bucket) for bucket in routing_table.buckets)} nodes")
                     return routing_table
         except (pickle.PickleError, EOFError, AttributeError) as e:
             self.logger.warning(f"DHTClient - Error loading routing table: {e}. Creating new one.")
@@ -317,9 +318,11 @@ class _DHTClient:
             elapsed = time.time() - start_time
             if elapsed > 60 and len(self.found_peers) > 0:
                 self.logger.info(
-                    f"DHTClient - DHT search taking too long ({elapsed:.1f}s), returning with {len(self.found_peers)} peers")
+                    f"DHTClient - DHT search taking too long ({elapsed:.1f}s), "
+                    f"returning with {len(self.found_peers)} peers")
                 break
 
-        self.logger.info(f"DHTClient - DHT search complete. Found {len(self.found_peers)} peers in {queries_performed} queries")
+        self.logger.info(f"DHTClient - DHT search complete. Found {len(self.found_peers)} "
+                         f"peers in {queries_performed} queries")
         return list(self.found_peers) [:max_peers] # Return only up to max_peers
-# *************************************************************** EOF *****************************************************************
+# ******************************************************** EOF *********************************************************

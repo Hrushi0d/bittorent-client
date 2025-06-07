@@ -1,22 +1,22 @@
 # *****************************************************************************************************************************************
-# 							    _________  ________  ________  ________  _______   ________   _________
-# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
-# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
-# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
-# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
-# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
-# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#                     _________  ________  ________  ________  _______   ________   _________
+#                    |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+#                    \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+#                         \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+#                          \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+#                           \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+#                            \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
 #
-#                                                             INFO ABOUT THIS FILE
-#                                           implements the `DownloadManager` class responsible for orchestrating
-#                                           the parallel downloading of pieces from peers in a BitTorrent client.
-#                                           It efficiently manages piece and block-level concurrency, assigns
-#                                           download tasks to peers, and tracks download progress to maximize
-#                                           throughput and reliability.Controls overall concurrency with semaphores
-#                                           for both pieces and blocks, allowing configurable limits for maximum
-#                                           parallel downloads.
+#                                                 INFO ABOUT THIS FILE
+#                               implements the `DownloadManager` class responsible for orchestrating
+#                               the parallel downloading of pieces from peers in a BitTorrent client.
+#                               It efficiently manages piece and block-level concurrency, assigns
+#                               download tasks to peers, and tracks download progress to maximize
+#                               throughput and reliability.Controls overall concurrency with semaphores
+#                               for both pieces and blocks, allowing configurable limits for maximum
+#                               parallel downloads.
 #
-# *************************************************************** IMPORTS *****************************************************************
+# ****************************************************** IMPORTS *******************************************************
 
 import asyncio
 import logging
@@ -27,7 +27,7 @@ from utils._DownloadQueue import QueueClosed, DownloadChecker
 from utils._Peer import Peer
 from utils._Piece import Piece
 
-# ********************************************************** DOWNLOAD MANAGER *****************************************************************
+# *********************************************** DOWNLOAD MANAGER *****************************************************
 
 class DownloadManager:
     def __init__(self, logger: logging.Logger, async_queue: AsyncQueue, pieces: list[Piece],

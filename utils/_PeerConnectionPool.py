@@ -1,31 +1,31 @@
 # **********************************************************************************************************************
-# 							    _________  ________  ________  ________  _______   ________   _________
-# 							   |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
-# 							   \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
-# 							        \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
-# 							         \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
-# 							          \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
-# 							           \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
+#                     _________  ________  ________  ________  _______   ________   _________
+#                    |\___   ___\\   __  \|\   __  \|\   __  \|\  ___ \ |\   ___  \|\___   ___\
+#                    \|___ \  \_\ \  \|\  \ \  \|\  \ \  \|\  \ \   __/|\ \  \\ \  \|___ \  \_|
+#                         \ \  \ \ \  \\\  \ \   _  _\ \   _  _\ \  \_|/_\ \  \\ \  \   \ \  \
+#                          \ \  \ \ \  \\\  \ \  \\  \\ \  \\  \\ \  \_|\ \ \  \\ \  \   \ \  \
+#                           \ \__\ \ \_______\ \__\\ _\\ \__\\ _\\ \_______\ \__\\ \__\   \ \__\
+#                            \|__|  \|_______|\|__|\|__|\|__|\|__|\|_______|\|__| \|__|    \|__|
 #
-#                                                             INFO ABOUT THIS FILE
-#                                           `PeerConnectionPool` class, handles maintaining a pool of active peers,
-#                                           gets and organises piece information into piece_dict with key as
-#                                           piece_index and value as list of peers that have that piece available,
-#                                           this is used later inside utils._PieceManager to sort peices into
-#                                           strategic order.
+#                                                 INFO ABOUT THIS FILE
+#                               `PeerConnectionPool` class, handles maintaining a pool of active peers,
+#                               gets and organises piece information into piece_dict with key as
+#                               piece_index and value as list of peers that have that piece available,
+#                               this is used later inside utils._PieceManager to sort peices into
+#                               strategic order.
 #
-#                                            - First it acquires peers from the torrent using a petter getter
-#                                              instance defined in utils._PeerGetter.
+#                                - First it acquires peers from the torrent using a petter getter
+#                                  instance defined in utils._PeerGetter.
 #
-#                                            - Then, sets up interested and bitfeild requests for each peer
-#                                              as an Asyncio Coroutine. using the member functions
-#                                              _handle_peer_with_timeout() and _handle_peer(), then it attempts
-#                                              retries with exponential backoff on all peer requests just in case.
+#                                - Then, sets up interested and bitfeild requests for each peer
+#                                  as an Asyncio Coroutine. using the member functions
+#                                  _handle_peer_with_timeout() and _handle_peer(), then it attempts
+#                                  retries with exponential backoff on all peer requests just in case.
 #
-#                                            - Checks to see if there are any missing peices, stopping execution
-#                                              if no pieces are available. it logs peer scores. then it returns
-#                                              the piece_dict.
-#
+#                                - Checks to see if there are any missing peices, stopping execution
+#                                  if no pieces are available. it logs peer scores. then it returns
+#                                  the piece_dict.
+
 # *************************************************************** IMPORTS **********************************************
 
 import asyncio
@@ -50,7 +50,6 @@ class PeerConnectionPool:
         self.piece_length = self.info_dict[b'piece length']
         self.pieces_data = self.info_dict[b'pieces']
 
-        # Cache info hash calculation
         bencoded_info = Encoder(self.info_dict).encode()
         self.info_hash = hashlib.sha1(bencoded_info).digest()
 
@@ -415,31 +414,6 @@ class PeerConnectionPool:
             return False
         else:
             self.logger.info(f"PeerConnectionPool - All {self.total_pieces} pieces are available from peers")
-
-        # # Log summary
-        # successful_peers = sum(1 for result in peer_results.values() if result)
-        # success_rate = successful_peers / max(1, len(self.peers)) * 100
-        # self.logger.info(
-        #     f"PeerConnectionPool - Successfully connected to {successful_peers} out of {len(self.peers)} peers "
-        #     f"({success_rate:.1f}%)")
-        #
-        # # Log piece availability summary
-        # pieces_with_peers = sum(1 for piece_id, peers_list in piece_dict.items() if peers_list)
-        # if pieces_with_peers > 0:
-        #     self.logger.info(
-        #         f"PeerConnectionPool - Found {pieces_with_peers} "
-        #         f"pieces available from peers ({pieces_with_peers / self.total_pieces * 100:.1f}% of total)")
-        #
-        #     # Find most and least available pieces
-        #     piece_availability = [(piece_id, len(peers_list)) for piece_id, peers_list in piece_dict.items() if
-        #                           peers_list]
-        #     if piece_availability:
-        #         most_available = max(piece_availability, key=lambda x: x[1])
-        #         least_available = min(piece_availability, key=lambda x: x[1])
-        #         self.logger.info(
-        #             f"PeerConnectionPool - Most available piece: {most_available[0]} ({most_available[1]} peers)")
-        #         self.logger.info(
-        #             f"PeerConnectionPool - Least available piece: {least_available[0]} ({least_available[1]} peers)")
 
         # Return the piece dictionary
         return piece_dict

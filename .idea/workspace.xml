@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d4398857-e4c4-4827-8b17-77328c55dc0f" name="Changes" comment="" />
+    <list default="true" id="d4398857-e4c4-4827-8b17-77328c55dc0f" name="Changes" comment="cli.py added">
+      <change afterPath="$PROJECT_DIR$/.idea/git_toolbox_prj.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/_PeerConnectionPool.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/_PeerConnectionPool.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -63,6 +67,7 @@
     &quot;Python.readerv2.executor&quot;: &quot;Run&quot;,
     &quot;Python.test.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/pypy3/pypy3.11-v7.3.19-win64&quot;,
@@ -77,7 +82,7 @@
       <recent name="E:\Projects\bittorent\pythonProject1\utils" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python._DownloadManager">
     <configuration name="_DownloadManager" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="pythonProject1" />
       <option name="ENV_FILES" value="" />
@@ -199,7 +204,31 @@
       <option name="project" value="LOCAL" />
       <updated>1748440160609</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="cli.py added">
+      <option name="closed" value="true" />
+      <created>1749273225596</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1749273225596</updated>
+    </task>
+    <task id="LOCAL-00003" summary="cli.py added">
+      <option name="closed" value="true" />
+      <created>1749273261857</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1749273261857</updated>
+    </task>
+    <task id="LOCAL-00004" summary="cli.py added">
+      <option name="closed" value="true" />
+      <created>1749273319335</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1749273319335</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -215,6 +244,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="working good, only need to remake all of download mananger and peer to work with block queue instead of peice queue" />
-    <option name="LAST_COMMIT_MESSAGE" value="working good, only need to remake all of download mananger and peer to work with block queue instead of peice queue" />
+    <MESSAGE value="cli.py added" />
+    <option name="LAST_COMMIT_MESSAGE" value="cli.py added" />
   </component>
 </project>
